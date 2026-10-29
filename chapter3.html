@@ -1,0 +1,2048 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chapter 3: Processes & IPC | OS MasterStudy</title>
+  <style>
+    :root {
+      --font-en: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      --font-ar: 'Segoe UI', Tahoma, 'Cairo', 'Tajawal', sans-serif;
+      --transition-speed: 0.3s;
+      
+      /* Dark Theme (Default) */
+      --bg-body: #0b0f19;
+      --bg-surface: #111827;
+      --bg-card: #1f2937;
+      --bg-card-hover: #283548;
+      --bg-glass: rgba(17, 24, 39, 0.88);
+      --border-color: #374151;
+      --border-focus: #6366f1;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-primary: #6366f1;
+      --accent-primary-hover: #4f46e5;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --callout-tip-bg: rgba(245, 158, 11, 0.1);
+      --callout-tip-border: #f59e0b;
+      --callout-hard-bg: rgba(99, 102, 241, 0.1);
+      --callout-hard-border: #6366f1;
+      --table-header-bg: #1e293b;
+      --table-zebra-bg: #182234;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="light"] {
+      --bg-body: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --bg-glass: rgba(255, 255, 255, 0.92);
+      --border-color: #e2e8f0;
+      --border-focus: #4f46e5;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --accent-primary: #4f46e5;
+      --accent-primary-hover: #4338ca;
+      --accent-cyan: #0284c7;
+      --accent-emerald: #059669;
+      --accent-amber: #d97706;
+      --accent-rose: #e11d48;
+      --callout-tip-bg: #fffbeb;
+      --callout-tip-border: #d97706;
+      --callout-hard-bg: #eef2ff;
+      --callout-hard-border: #4f46e5;
+      --table-header-bg: #f1f5f9;
+      --table-zebra-bg: #f8fafc;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-en);
+      background-color: var(--bg-body);
+      color: var(--text-primary);
+      line-height: 1.65;
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+      overflow-x: hidden;
+    }
+
+    [data-lang="en"] .lang-ar {
+      display: none !important;
+    }
+    [data-lang="ar"] .lang-en {
+      display: none !important;
+    }
+    [data-lang="ar"] body, 
+    html[dir="rtl"] {
+      font-family: var(--font-ar);
+    }
+
+    .header-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: var(--bg-glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 800;
+      font-size: 1.15rem;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    }
+
+    .logo-text h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .logo-text span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .chapter-links {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      list-style: none;
+    }
+
+    .chapter-link {
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+      transition: all var(--transition-speed);
+    }
+
+    .chapter-link:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-color: var(--border-color);
+    }
+
+    .chapter-link.active {
+      background: var(--accent-primary);
+      color: white;
+      box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .btn-toggle {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all var(--transition-speed);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-toggle:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-primary);
+      transform: translateY(-1px);
+    }
+
+    .main-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(6, 182, 212, 0.08));
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 2.25rem 2rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-banner::after {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, var(--accent-primary) 0%, transparent 70%);
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: var(--accent-primary);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero-title {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+      line-height: 1.25;
+      color: var(--text-primary);
+    }
+
+    .hero-desc {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      max-width: 900px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 0.85rem 1.25rem;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .content-section {
+      margin-bottom: 3rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .section-number {
+      background: var(--accent-primary);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.4rem;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-speed);
+    }
+
+    .info-card:hover {
+      border-color: var(--accent-primary);
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-text {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .card-list {
+      margin-top: 0.75rem;
+      padding-left: 1.25rem;
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+    }
+
+    [dir="rtl"] .card-list {
+      padding-left: 0;
+      padding-right: 1.25rem;
+    }
+
+    .card-list li {
+      margin-bottom: 0.4rem;
+    }
+
+    .callout {
+      border-radius: 10px;
+      padding: 1.25rem 1.4rem;
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      border-left: 4px solid transparent;
+    }
+
+    [dir="rtl"] .callout {
+      border-left: none;
+      border-right: 4px solid transparent;
+    }
+
+    .callout-exam {
+      background: var(--callout-tip-bg);
+      border-color: var(--callout-tip-border);
+    }
+
+    .callout-hard {
+      background: var(--callout-hard-bg);
+      border-color: var(--callout-hard-border);
+    }
+
+    .callout-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .callout-content {
+      flex: 1;
+    }
+
+    .callout-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .callout-title {
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .callout-exam .callout-title {
+      color: var(--accent-amber);
+    }
+
+    .callout-hard .callout-title {
+      color: var(--accent-primary);
+    }
+
+    .exam-badge {
+      background: var(--accent-amber);
+      color: #000;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .callout-body {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.92rem;
+    }
+
+    [dir="rtl"] .compare-table {
+      text-align: right;
+    }
+
+    .compare-table th {
+      background: var(--table-header-bg);
+      color: var(--text-primary);
+      padding: 0.85rem 1rem;
+      font-weight: 700;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .compare-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    .compare-table tr:nth-child(even) td {
+      background: var(--table-zebra-bg);
+    }
+
+    .compare-table tr:hover td {
+      background: var(--bg-card-hover);
+    }
+
+    .steps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      margin: 1.25rem 0;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+    }
+
+    .step-num {
+      background: var(--accent-cyan);
+      color: #000;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .step-text h4 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.2rem;
+    }
+
+    .step-text p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .glossary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .term-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      transition: all var(--transition-speed);
+    }
+
+    .term-card:hover {
+      border-color: var(--accent-emerald);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .term-en {
+      font-weight: 700;
+      color: var(--accent-emerald);
+      font-size: 1rem;
+      margin-bottom: 0.15rem;
+    }
+
+    .term-ar {
+      font-weight: 700;
+      color: var(--accent-cyan);
+      font-size: 0.95rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .term-def {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+    }
+
+    .quiz-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 2.25rem 2rem;
+      margin-top: 3.5rem;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .quiz-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .quiz-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+    }
+
+    .quiz-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .question-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: border-color var(--transition-speed);
+    }
+
+    .question-block.correct-highlight {
+      border-color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .question-block.incorrect-highlight {
+      border-color: var(--accent-rose);
+      background: rgba(244, 63, 94, 0.05);
+    }
+
+    .question-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .question-badge {
+      background: var(--table-header-bg);
+      color: var(--accent-cyan);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    .question-exam-tag {
+      font-size: 0.75rem;
+      color: var(--accent-amber);
+      font-weight: 600;
+    }
+
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      line-height: 1.4;
+    }
+
+    .options-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .option-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.92rem;
+      transition: all var(--transition-speed);
+    }
+
+    .option-label:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+      border-color: var(--border-focus);
+    }
+
+    .option-label input[type="radio"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border-color);
+      border-radius: 50%;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .option-label input[type="radio"]:checked {
+      border-color: var(--accent-primary);
+      background-color: var(--accent-primary);
+      box-shadow: inset 0 0 0 3px var(--bg-surface);
+    }
+
+    .option-label.is-correct {
+      border-color: var(--accent-emerald) !important;
+      background: rgba(16, 185, 129, 0.15) !important;
+      color: var(--accent-emerald) !important;
+      font-weight: 700;
+    }
+
+    .option-label.is-wrong {
+      border-color: var(--accent-rose) !important;
+      background: rgba(244, 63, 94, 0.15) !important;
+      color: var(--accent-rose) !important;
+    }
+
+    .question-explanation {
+      margin-top: 1rem;
+      padding: 0.85rem 1.1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      display: none;
+    }
+
+    .question-explanation.show {
+      display: block;
+    }
+
+    .explanation-correct {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--accent-emerald);
+      color: var(--text-primary);
+    }
+
+    .quiz-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 2rem;
+    }
+
+    .btn-quiz-submit {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      color: white;
+      border: none;
+      padding: 0.85rem 2.2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .btn-quiz-submit:hover {
+      opacity: 0.92;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.45);
+    }
+
+    .btn-quiz-reset {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 0.85rem 1.8rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+    }
+
+    .btn-quiz-reset:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .score-summary-box {
+      margin-top: 2rem;
+      padding: 2rem;
+      border-radius: 12px;
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      text-align: center;
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .score-summary-box.show {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .score-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--table-header-bg);
+      border: 4px solid var(--accent-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+    }
+
+    .score-number {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      line-height: 1;
+    }
+
+    .score-percent {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .score-status {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .score-message {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .page-footer {
+      border-top: 1px solid var(--border-color);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      background: var(--bg-surface);
+    }
+
+    @media (max-width: 868px) {
+      .nav-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .chapter-links {
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+      }
+      .hero-title {
+        font-size: 1.6rem;
+      }
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body data-lang="en">
+
+  <!-- Sticky Top Header & Navigation -->
+  <header class="header-nav">
+    <div class="nav-container">
+      <a href="chapter1.html" class="logo-area">
+        <div class="logo-icon">OS</div>
+        <div class="logo-text">
+          <h1 class="lang-en">OS MasterStudy</h1>
+          <h1 class="lang-ar">دليل أنظمة التشغيل</h1>
+          <span class="lang-en">BCS241 Course Guide</span>
+          <span class="lang-ar">مقرر BCS241 - م/د. خالد وصيف</span>
+        </div>
+      </a>
+
+      <!-- Chapter Switcher Links -->
+      <nav>
+        <ul class="chapter-links">
+          <li><a href="chapter1.html" class="chapter-link">Ch 1: Intro</a></li>
+          <li><a href="chapter2.html" class="chapter-link">Ch 2: Structure</a></li>
+          <li><a href="chapter3.html" class="chapter-link active">Ch 3: Processes</a></li>
+          <li><a href="chapter5.html" class="chapter-link">Ch 5: Sync</a></li>
+          <li><a href="chapter6.html" class="chapter-link">Ch 6: Sched</a></li>
+        </ul>
+      </nav>
+
+      <!-- Controls -->
+      <div class="nav-controls">
+        <button id="themeToggle" class="btn-toggle" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+          <span id="themeIcon">☀️</span>
+          <span class="lang-en" id="themeTextEn">Light</span>
+          <span class="lang-ar" id="themeTextAr">نهاري</span>
+        </button>
+        <button id="langToggle" class="btn-toggle" title="Toggle English/Arabic" aria-label="Toggle Language">
+          <span>🌐</span>
+          <span class="lang-en">العربية</span>
+          <span class="lang-ar">English</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-container">
+
+    <!-- Hero Header Banner -->
+    <header class="hero-banner">
+      <span class="hero-badge lang-en">Chapter 3 Study Guide</span>
+      <span class="hero-badge lang-ar">دليل دراسة الفصل الثالث</span>
+
+      <h2 class="hero-title lang-en">Processes & Interprocess Communication (IPC)</h2>
+      <h2 class="hero-title lang-ar">العمليات والتواصل بين العمليات (IPC)</h2>
+
+      <p class="hero-desc lang-en">
+        Master the foundational concepts of process management: the 4-part process memory anatomy, process states, the Process Control Block (PCB), context switching, long/medium/short-term schedulers, process creation with fork() and exec(), and IPC models (Shared Memory vs. Message Passing, Direct vs. Indirect, and Rendezvous synchronization).
+      </p>
+      <p class="hero-desc lang-ar">
+        أتقن المفاهيم الجوهرية لإدارة العمليات: الأجزاء الأربعة للعملية في الذاكرة، حالات العملية، كتلة التحكم بالعملية (PCB)، تبديل السياق، المجدولات الثلاثة، إنشاء العمليات بـ fork() و exec()، ونماذج التواصل بين العمليات (الذاكرة المشتركة وتمرير الرسائل، المباشر وغير المباشر، وتزامن Rendezvous).
+      </p>
+
+      <div class="hero-stats">
+        <div class="stat-card">
+          <span class="stat-value">51 Slides</span>
+          <span class="stat-label lang-en">Lecture Material</span>
+          <span class="stat-label lang-ar">محتوى المحاضرة</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" style="color: var(--accent-amber);">Very High Yield</span>
+          <span class="stat-label lang-en">Exam Frequency</span>
+          <span class="stat-label lang-ar">الوزن في الامتحانات</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" style="color: var(--accent-emerald);">8+ Past MCQs</span>
+          <span class="stat-label lang-en">Midterm Questions</span>
+          <span class="stat-label lang-ar">أسئلة ميدتيرم مدمجة</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">5 MCQs</span>
+          <span class="stat-label lang-en">Interactive Quiz</span>
+          <span class="stat-label lang-ar">اختبار تفاعلي</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- SECTION 1: PROCESS CONCEPT & MEMORY LAYOUT -->
+    <section class="content-section" id="section1">
+      <div class="section-header">
+        <div class="section-number">1</div>
+        <h3 class="section-title lang-en">The Process Concept & Memory Anatomy</h3>
+        <h3 class="section-title lang-ar">مفهوم العملية وتشريحها داخل الذاكرة</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>💾</span>
+            <span class="lang-en">Program vs. Process</span>
+            <span class="lang-ar">البرنامج (Program) مقابل العملية (Process)</span>
+          </h4>
+          <p class="card-text lang-en">
+            A fundamental exam distinction:
+          </p>
+          <p class="card-text lang-ar">
+            مقارنة امتحانية أساسية ومتكررة:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Program (Passive Entity):</strong> Stored on secondary storage (disk) as an executable file (e.g., <code>app.exe</code>, <code>a.out</code>). It does nothing until loaded.</span>
+              <span class="lang-ar"><strong>البرنامج (كيان ساكن Passive):</strong> ملف تنفيذي مخزن على القرص، لا يستهلك معالجاً ولا ينفذ أوامر حتى يتم تحميله.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Process (Active Entity):</strong> A <em>program in execution</em>. It has an active Program Counter (PC), CPU registers, memory allocations, and resources.</span>
+              <span class="lang-ar"><strong>العملية (كيان نشط Active):</strong> <em>برنامج قيد التنفيذ</em> في الذاكرة يمتلك عداد برنامج (PC) ومسجلات وموارد مخصصة.</span>
+            </li>
+            <li>
+              <span class="lang-en">One program can spawn multiple separate processes (e.g., multiple users running the same web browser or multiple terminal sessions).</span>
+              <span class="lang-ar">يمكن لبرنامج واحد على القرص أن يُنشئ عدة عمليات متزامنة ومستقلة في الذاكرة.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🧱</span>
+            <span class="lang-en">The 4 Sections of a Process in Memory</span>
+            <span class="lang-ar">الأقسام الأربعة للعملية داخل الذاكرة</span>
+          </h4>
+          <p class="card-text lang-en">
+            When a program loads into RAM, its address space is partitioned into four functional regions:
+          </p>
+          <p class="card-text lang-ar">
+            عند تحميل البرنامج في الذاكرة الرئيسية، تنقسم مساحته العنوانية إلى 4 مناطق:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>1. Text Section:</strong> Contains the compiled executable machine code instructions. Fixed size and usually read-only.</span>
+              <span class="lang-ar"><strong>1. قسم النص (Text Section):</strong> يحتوي على الكود البرمجي التنفيذي (تعليمات الآلة). حجمه ثابت وهو للقراءة فقط.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>2. Data Section:</strong> Stores global variables and static variables allocated before program execution begins.</span>
+              <span class="lang-ar"><strong>2. قسم البيانات (Data Section):</strong> يحتوي على المتغيرات العامة (Global) والمتغيرات الساكنة (Static).</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>3. Stack (Grows Downward):</strong> Stores <strong>temporary data</strong> including function parameters, return memory addresses, and local variables.</span>
+              <span class="lang-ar"><strong>3. المكدس (Stack):</strong> يحتوي على <strong>البيانات المؤقتة</strong>: معاملات الدوال، عناوين العودة، والمتغيرات المحلية (Local Variables). ينمو لأسفل.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>4. Heap (Grows Upward):</strong> Memory dynamically allocated at runtime via <code>malloc()</code> in C or <code>new</code> in C++/Java.</span>
+              <span class="lang-ar"><strong>4. الكومة (Heap):</strong> الذاكرة المخصصة ديناميكياً أثناء وقت التشغيل عبر <code>malloc()</code> أو <code>new</code>. تنمو لأعلى باتجاه المكدس.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- EXAM TIP CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Must-Know Exam Questions (Memory & Nature)</span>
+            <span class="callout-title lang-ar">أسئلة امتحانية متكررة بنصها (الذاكرة وماهية العملية)</span>
+            <span class="exam-badge">Midterms 2021 & 2022</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Midterm 2021 Q1.1 (MCQ):</strong> <em>"The _____ of a process contains temporary data such as function parameters, return addresses, and local variables: a. text, b. data, c. PC, d. stack"</em> ➔ <strong>Answer: d. Stack</strong>.<br>
+            <strong>Midterm 2021 Q1.11 (MCQ):</strong> <em>"The difference between a program and a process is that a program is a(n) _____ entity while a process is a _______ entity: a. passive, active..."</em> ➔ <strong>Answer: a. passive, active</strong>.<br>
+            <strong>Midterm 2022 Q3:</strong> <em>"Briefly Define: Process"</em> ➔ A program in execution; an active entity with a program counter, stack, data, and heap.
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>ميدتيرم 2021 سؤال 1.1:</strong> <em>"يحتوي _____ في العملية على البيانات المؤقتة مثل معاملات الدوال، عناوين العودة، والمتغيرات المحلية: أ) Text ب) Data ج) PC د) Stack"</em> ➔ <strong>الإجابة: د) المكدس (Stack)</strong>.<br>
+            <strong>ميدتيرم 2021 سؤال 1.11:</strong> <em>"الفارق بين البرنامج والعملية هو أن البرنامج كيان _____ بينما العملية كيان _____"</em> ➔ <strong>الإجابة: ساكن (Passive)، نشط (Active)</strong>.<br>
+            <strong>ميدتيرم 2022 سؤال 3:</strong> <em>"عرّف باختصار: العملية (Process)"</em> ➔ برنامج قيد التنفيذ؛ وهو كيان نشط يتضمن عداد البرنامج، المكدس، قسم البيانات، والكومة.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: PROCESS STATES & PCB -->
+    <section class="content-section" id="section2">
+      <div class="section-header">
+        <div class="section-number">2</div>
+        <h3 class="section-title lang-en">Process States, PCB & Context Switching</h3>
+        <h3 class="section-title lang-ar">حالات العملية، كتلة التحكم (PCB) والتبديل السياقي</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🔄</span>
+            <span class="lang-en">The 5 Process States</span>
+            <span class="lang-ar">حالات العملية الخمس</span>
+          </h4>
+          <p class="card-text lang-en">
+            As a process executes, it transitions through five distinct states:
+          </p>
+          <p class="card-text lang-ar">
+            أثناء دورة حياة العملية، تنتقل بين خمس حالات رئيسية:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>New:</strong> The process is being created.</span>
+              <span class="lang-ar"><strong>جديدة (New):</strong> العملية قيد الإنشاء والتجهيز.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Running:</strong> Instructions are being actively executed on a CPU core.</span>
+              <span class="lang-ar"><strong>قيد التنفيذ (Running):</strong> التعليمات تُنفذ حالياً على المعالج.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Waiting (Blocked):</strong> The process is waiting for some external event to occur (such as I/O completion or reception of a signal).</span>
+              <span class="lang-ar"><strong>في الانتظار (Waiting):</strong> تنتظر وقوع حدث خارجي (مثل اكتمال I/O أو وصول إشارة).</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Ready:</strong> The process is loaded in main memory and <strong>waiting to be assigned to a processor</strong> by the CPU scheduler.</span>
+              <span class="lang-ar"><strong>جاهزة (Ready):</strong> محملة بالذاكرة وجاهزة تماماً، و<strong>تنتظر فقط تخصيص المعالج لها</strong>.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Terminated:</strong> The process has finished execution and released its memory.</span>
+              <span class="lang-ar"><strong>منتهية (Terminated):</strong> أتمت التنفيذ وحررت مواردها.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>📋</span>
+            <span class="lang-en">Process Control Block (PCB)</span>
+            <span class="lang-ar">كتلة التحكم بالعملية (PCB)</span>
+          </h4>
+          <p class="card-text lang-en">
+            The data structure in the kernel representing a process. It contains:
+          </p>
+          <p class="card-text lang-ar">
+            هيكل بيانات داخل النواة يمثل بطاقة هوية العملية وسجلها، ويحتوي على:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Process State:</strong> New, ready, running, waiting, or terminated.</span>
+              <span class="lang-ar">حالة العملية الحالية.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Program Counter (PC):</strong> Address of the next instruction to execute.</span>
+              <span class="lang-ar">عداد البرنامج: عنوان التعليمة التالية للتنفيذ.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>CPU Registers:</strong> Accumulators, index registers, stack pointers, general registers.</span>
+              <span class="lang-ar">مسجلات المعالج ومؤشر المكدس.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>CPU Scheduling Info:</strong> Priority and queue pointers.</span>
+              <span class="lang-ar">أولوية العملية ومؤشرات طوابير الجدولة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Memory-Management Info:</strong> Base/limit registers or page/segment tables.</span>
+              <span class="lang-ar">معلومات الذاكرة وجداول الصفحات المخصصة لها.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Accounting & I/O Status Info:</strong> CPU time consumed, open files list, allocated I/O devices.</span>
+              <span class="lang-ar">معلومات الحسابات وقائمة الملفات المفتوحة وأجهزة I/O المخصصة.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- HARD CONCEPT BREAKDOWN: CONTEXT SWITCHING -->
+      <div class="callout callout-hard">
+        <div class="callout-icon">💡</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Hard Concept Breakdown: What Really Happens During a Context Switch?</span>
+            <span class="callout-title lang-ar">تبسيط مفهوم معقد: ماذا يحدث بالدقة أثناء التبديل السياقي (Context Switch)؟</span>
+          </div>
+          <p class="callout-body lang-en">
+            When the CPU switches from running Process $P_0$ to Process $P_1$:
+          </p>
+          <p class="callout-body lang-ar">
+            عندما يقرر المعالج التبديل من تنفيذ العملية $P_0$ إلى العملية $P_1$:
+          </p>
+
+          <div class="steps-container">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-text">
+                <h4 class="lang-en">Save State of $P_0$ into $PCB_0$</h4>
+                <h4 class="lang-ar">حفظ حالة العملية القديمة في $PCB_0$</h4>
+                <p class="lang-en">The kernel saves current Program Counter, CPU registers, and status flags into $P_0$'s Process Control Block.</p>
+                <p class="lang-ar">تحفظ النواة عداد البرنامج والمسجلات الحالية داخل كتلة التحكم $PCB_0$.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-text">
+                <h4 class="lang-en">CPU Scheduler Selects $P_1$</h4>
+                <h4 class="lang-ar">المجدول يختار العملية التالية $P_1$</h4>
+                <p class="lang-en">Scheduler selects next ready process $P_1$ from the ready queue and updates process states.</p>
+                <p class="lang-ar">يختار مجدول المعالج العملية التالية $P_1$ من طابور الجاهزية ويحدث حالتها إلى Running.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-text">
+                <h4 class="lang-en">Load State of $P_1$ from $PCB_1$</h4>
+                <h4 class="lang-ar">استرجاع حالة العملية الجديدة من $PCB_1$</h4>
+                <p class="lang-en">The kernel restores the saved registers, stack pointer, and Program Counter from $PCB_1$ into CPU registers.</p>
+                <p class="lang-ar">تسترجع النواة المسجلات ومؤشر المكدس وعداد البرنامج الخاص بالعملية $P_1$ إلى عتاد المعالج.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-text">
+                <h4 class="lang-en">Resume Execution & Overhead Reality</h4>
+                <h4 class="lang-ar">استئناف التنفيذ وحقيقة الهدر الزمني (Overhead)</h4>
+                <p class="lang-en">CPU resumes executing $P_1$. <strong>Crucial Exam Fact:</strong> Context switch time is <strong>pure overhead</strong>—the system performs NO useful work while switching states!</p>
+                <p class="lang-ar">يبدأ المعالج تنفيذ $P_1$. <strong>حقيقة امتحانية هامة:</strong> زمن تبديل السياق هو <strong>هدر محض (Overhead)</strong> ولا ينجز النظام أي عمل مفيد أثنائه!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXAM TIP CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Exam Trap Spotlight: Ready vs. Waiting States</span>
+            <span class="callout-title lang-ar">فخ امتحاني خبيث: الفرق بين حالتي Ready و Waiting</span>
+            <span class="exam-badge">Midterms 2021 & 2022</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Midterm 2022 Q1.8 (T/F):</strong> <em>"The ready process state describes the process that is being waited for some events to occur."</em> ➔ <strong>FALSE!</strong><br>
+            <strong>Explanation:</strong> That is the definition of the <strong>Waiting (Blocked)</strong> state. The <strong>Ready</strong> state describes a process that has everything it needs and is waiting <em>only to be allocated a CPU</em>!<br>
+            <strong>Midterm 2021 Q1.6:</strong> <em>"A <u>Context switch</u> saves the state of the currently running process and restores the state of the next process to run."</em><br>
+            <strong>Midterm 2021 Q1.7:</strong> A process may transition to the Ready state by: I/O completion, timer expiration (turn on CPU), or admission (All the choices!).
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>ميدتيرم 2022 سؤال 1.8:</strong> <em>"تصف حالة الجاهزية (Ready) العملية التي تنتظر وقوع أحداث معينة."</em> ➔ <strong>خطأ (False)!</strong><br>
+            <strong>التعليل:</strong> انتظار الأحداث هو تعريف حالة <strong>الانتظار (Waiting)</strong>. أما حالة <strong>الجاهزية (Ready)</strong> فتصف العملية الجاهزة بالكامل والتي تنتظر <em>فقط تخصيص المعالج لها</em>!<br>
+            <strong>ميدتيرم 2021 سؤال 1.6:</strong> <em>"يقوم <u>تبديل السياق (Context switch)</u> بحفظ حالة العملية الحالية واسترجاع حالة العملية التالية للتشغيل."</em><br>
+            <strong>ميدتيرم 2021 سؤال 1.7:</strong> تنتقل العملية لحالة Ready عند: اكتمال I/O، أو انتهاء شريحتها الزمنية على المعالج، أو قبولها حديثاً للنظام (جميع الخيارات صحيحة).
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: PROCESS SCHEDULING & SCHEDULERS -->
+    <section class="content-section" id="section3">
+      <div class="section-header">
+        <div class="section-number">3</div>
+        <h3 class="section-title lang-en">Process Scheduling: Queues & The 3 Schedulers</h3>
+        <h3 class="section-title lang-ar">جدولة العمليات: الطوابير والمجدولات الثلاثة</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🚶‍♂️</span>
+            <span class="lang-en">The 3 Scheduling Queues</span>
+            <span class="lang-ar">طوابير الجدولة الثلاثة</span>
+          </h4>
+          <p class="card-text lang-en">
+            Processes migrate among queues during their lifetime:
+          </p>
+          <p class="card-text lang-ar">
+            تهاجر العمليات بين طوابير مختلفة أثناء وجودها بالنظام:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Job Queue:</strong> Set of <strong>all processes</strong> present in the system (including jobs on disk awaiting admission).</span>
+              <span class="lang-ar"><strong>طابور الوظائف (Job Queue):</strong> يحتوي على <strong>كافة العمليات</strong> الموجودة في النظام ككل.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Ready Queue:</strong> Set of all processes residing in main memory (RAM), ready and waiting for CPU allocation.</span>
+              <span class="lang-ar"><strong>طابور الجاهزية (Ready Queue):</strong> العمليات المقيمة في RAM والجاهزة لانتزاع المعالج.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Device Queues:</strong> Set of processes waiting for a specific I/O device (e.g., disk queue, printer queue).</span>
+              <span class="lang-ar"><strong>طوابير الأجهزة (Device Queues):</strong> العمليات التي تنتظر إتاحة جهاز إدخال/إخراج محدد. (سؤال ميدتيرم 2021 Q1.3).</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>⚖️</span>
+            <span class="lang-en">Degree of Multiprogramming</span>
+            <span class="lang-ar">درجة البرمجة المتعددة (Degree of Multiprogramming)</span>
+          </h4>
+          <p class="card-text lang-en">
+            Defined as <strong>the total number of processes in main memory</strong>.
+          </p>
+          <p class="card-text lang-ar">
+            تُعرّف بأنها <strong>العدد الإجمالي للعمليات المقيمة في الذاكرة الرئيسية (RAM)</strong>.
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>I/O-Bound Process:</strong> Spends more time doing I/O than computations; characterized by many short CPU bursts.</span>
+              <span class="lang-ar"><strong>عملية مقيدة بـ I/O:</strong> تقضي وقتاً في الإدخال/الإخراج أكثر من الحسابات؛ نبضات معالج قصيرة وكثيرة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>CPU-Bound Process:</strong> Spends more time doing computations; characterized by very few, long CPU bursts.</span>
+              <span class="lang-ar"><strong>عملية مقيدة بالمعالج:</strong> تقضي معظم وقتها في الحسابات؛ نبضات معالج طويلة وقليلة.</span>
+            </li>
+            <li>
+              <span class="lang-en">The OS strives for a <strong>good process mix</strong> of both types to keep CPU and I/O devices concurrently busy.</span>
+              <span class="lang-ar">يسعى النظام لتحقيق <strong>مزيج متوازن</strong> بين النوعين لإشغال المعالج وأجهزة I/O في نفس الوقت.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- COMPARISON TABLE: THE 3 SCHEDULERS (REPEATED ESSAY TOPIC) -->
+      <h4 style="margin: 1.5rem 0 0.5rem; font-size: 1.15rem; color: var(--text-primary);" class="lang-en">The Three Schedulers Compared (Midterm Essay Question)</h4>
+      <h4 style="margin: 1.5rem 0 0.5rem; font-size: 1.15rem; color: var(--text-primary);" class="lang-ar">مقارنة شاملة بين المجدولات الثلاثة (سؤال مقالي في امتحان 2014)</h4>
+
+      <div class="table-responsive">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th class="lang-en">Feature</th>
+              <th class="lang-ar">وجه المقارنة</th>
+              <th class="lang-en">Long-Term Scheduler (Job Scheduler)</th>
+              <th class="lang-ar">المجدول طويل الأجل (Job Scheduler)</th>
+              <th class="lang-en">Short-Term Scheduler (CPU Scheduler)</th>
+              <th class="lang-ar">المجدول قصير الأجل (CPU Scheduler)</th>
+              <th class="lang-en">Medium-Term Scheduler (Swapper)</th>
+              <th class="lang-ar">المجدول متوسط الأجل (Swapper)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="lang-en"><strong>Primary Task</strong></td>
+              <td class="lang-ar"><strong>المهمة الأساسية</strong></td>
+              <td class="lang-en">Selects jobs from disk pool and loads them into memory (Ready Queue).</td>
+              <td class="lang-ar">يختار العمليات من القرص ويحملها للذاكرة (Ready Queue).</td>
+              <td class="lang-en">Selects which process from the ready queue executes next and allocates CPU.</td>
+              <td class="lang-ar">يختار العملية التالية للتنفيذ ويخصص لها المعالج (CPU).</td>
+              <td class="lang-en">Removes processes from memory to disk and brings them back (Swapping).</td>
+              <td class="lang-ar">ينقل العمليات مؤقتاً للقرص ويعيدها (المبادلة Swapping).</td>
+            </tr>
+            <tr>
+              <td class="lang-en"><strong>Invocation Frequency</strong></td>
+              <td class="lang-ar"><strong>معدل الاستدعاء</strong></td>
+              <td class="lang-en">Very infrequent (seconds, minutes); can be relatively slow.</td>
+              <td class="lang-ar">نادر الاستدعاء (كل ثوانٍ أو دقائق)؛ قد يكون بطيئاً.</td>
+              <td class="lang-en">Extremely frequent (milliseconds); <strong>must be very fast</strong>.</td>
+              <td class="lang-ar">متكرر وسريع جداً (كل عدة ميلي ثوانٍ)؛ <strong>يجب أن يكون فائق السرعة</strong>.</td>
+              <td class="lang-en">Intermediate frequency as needed during high memory pressure.</td>
+              <td class="lang-ar">متوسط الاستدعاء حسب ضغط الذاكرة.</td>
+            </tr>
+            <tr>
+              <td class="lang-en"><strong>Control Over Multiprogramming</strong></td>
+              <td class="lang-ar"><strong>التحكم في درجة البرمجة المتعددة</strong></td>
+              <td class="lang-en"><strong>Directly controls</strong> the degree of multiprogramming.</td>
+              <td class="lang-ar"><strong>يتحكم مباشرة</strong> في درجة البرمجة المتعددة بزيادتها.</td>
+              <td class="lang-en">Has NO control over the degree of multiprogramming.</td>
+              <td class="lang-ar"><strong>لا يتحكم</strong> إطلاقاً في درجة البرمجة المتعددة.</td>
+              <td class="lang-en"><strong>Reduces</strong> degree of multiprogramming when RAM is overloaded.</td>
+              <td class="lang-ar"><strong>يقلل</strong> درجة البرمجة المتعددة لتخفيف العبء.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- EXAM TIP CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Past Exam Traps: Schedulers & Multiprogramming</span>
+            <span class="callout-title lang-ar">فخاخ امتحانية سابقة حول المجدولات والبرمجة المتعددة</span>
+            <span class="exam-badge">Midterm 2014, 2019 & 2021</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Midterm 2014 Q1.6 (T/F):</strong> <em>"Short-term scheduler controls the degree of multiprogramming."</em> ➔ <strong>FALSE!</strong> It is the <strong>Long-term scheduler</strong> that controls the degree of multiprogramming.<br>
+            <strong>Midterm 2019 Q1.8 (T/F):</strong> <em>"The degree of multiprogramming is the number of processes in the ready queue."</em> ➔ <strong>FALSE!</strong> It is the number of processes in <em>main memory</em> (including ready and waiting processes).<br>
+            <strong>Midterm 2019 Q1.9 (T/F):</strong> <em>"As processes enter the system, they are put into a ready queue, which consists of all processes in the system."</em> ➔ <strong>FALSE!</strong> They are put into the <em>Job Queue</em>; the ready queue contains only processes in memory ready to run.<br>
+            <strong>Midterm 2021 Q1.13:</strong> Short-term scheduler selects which process executes next and allocates CPU.
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>ميدتيرم 2014 سؤال 1.6:</strong> <em>"المجدول قصير الأجل هو الذي يتحكم في درجة البرمجة المتعددة."</em> ➔ <strong>خطأ (False)!</strong> بل هو <strong>المجدول طويل الأجل (Long-term)</strong>.<br>
+            <strong>ميدتيرم 2019 سؤال 1.8:</strong> <em>"درجة البرمجة المتعددة هي عدد العمليات في طابور الجاهزية."</em> ➔ <strong>خطأ (False)!</strong> بل هي عدد العمليات الكلي المقيم في <em>الذاكرة الرئيسية</em> (جاهزة + منتظرة).<br>
+            <strong>ميدتيرم 2019 سؤال 1.9:</strong> <em>"عند دخول العمليات للنظام توضع في طابور الجاهزية الذي يضم كافة عمليات النظام."</em> ➔ <strong>خطأ (False)!</strong> بل توضع في <em>طابور الوظائف (Job Queue)</em> أولاً.<br>
+            <strong>ميدتيرم 2021 سؤال 1.13:</strong> وظيفة المجدول قصير الأجل اختيار العملية التالية وتخصيص المعالج لها.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: PROCESS OPERATIONS (FORK & TERMINATION) -->
+    <section class="content-section" id="section4">
+      <div class="section-header">
+        <div class="section-number">4</div>
+        <h3 class="section-title lang-en">Process Operations: Creation, Forking & Termination</h3>
+        <h3 class="section-title lang-ar">عمليات التشغيل: إنشاء العمليات، التفرع fork() والإنهاء</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🌳</span>
+            <span class="lang-en">Process Creation & Forking</span>
+            <span class="lang-ar">إنشاء العمليات والتفرع (fork)</span>
+          </h4>
+          <p class="card-text lang-en">
+            In UNIX/Linux, processes form a tree hierarchy with <code>init</code> (or <code>systemd</code>, PID = 1) at the root:
+          </p>
+          <p class="card-text lang-ar">
+            في أنظمة UNIX/Linux، تشكل العمليات شجرة هرمية تبدأ من جذر النظام <code>init</code> (رقم PID = 1):
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>fork() System Call:</strong> Creates a new process. The child process is an <strong>exact duplicate of the parent's address space</strong>. Both processes continue execution from the instruction following <code>fork()</code>!</span>
+              <span class="lang-ar"><strong>استدعاء fork():</strong> ينشئ عملية ابن تكون <strong>نسخة مطابقة تماماً للمسار والعنوان البرمجي للأب</strong>، ويكمل كلاهما التنفيذ من النقطة التالية لـ fork().</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Return Value of fork():</strong> Returns <strong>0</strong> to the child process, and returns the <strong>child's PID</strong> to the parent process.</span>
+              <span class="lang-ar"><strong>قيمة العودة:</strong> يعيد <strong>0</strong> للعملية الابن، ويعيد <strong>رقم PID للابن</strong> للعملية الأب.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>exec() System Call:</strong> Used after <code>fork()</code> to overwrite the process memory space with an entirely new program binary (e.g., running <code>/bin/ls</code>).</span>
+              <span class="lang-ar"><strong>استدعاء exec():</strong> يُستخدم بعد fork() لاستبدال محتوى الذاكرة بالكامل ببرنامج تنفيذي جديد.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>wait() System Call:</strong> The parent can call <code>wait()</code> to suspend execution until the child terminates.</span>
+              <span class="lang-ar"><strong>استدعاء wait():</strong> يعلق تنفيذ الأب حتى ينتهي الابن تماماً من عمله.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🛑</span>
+            <span class="lang-en">Process Termination & Special States</span>
+            <span class="lang-ar">إنهاء العمليات والحالات الخاصة</span>
+          </h4>
+          <p class="card-text lang-en">
+            A process finishes by invoking the <code>exit()</code> system call:
+          </p>
+          <p class="card-text lang-ar">
+            تنهي العملية تنفيذها باستدعاء <code>exit()</code>:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Cascading Termination:</strong> In some operating systems, if a parent process terminates, all of its children must also be terminated immediately.</span>
+              <span class="lang-ar"><strong>الإنهاء التتالي (Cascading Termination):</strong> إنهاء فوري لكافة الأبناء إذا انتهت العملية الأب.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Zombie Process:</strong> A process that has terminated, but whose parent has not yet called <code>wait()</code> to read its exit status. It remains in the process table.</span>
+              <span class="lang-ar"><strong>العملية الشبح (Zombie):</strong> عملية انتهت لكن لم يستدعِ الأب <code>wait()</code> لقراءة حالتها، فتبقى بياناتها بجدول العمليات.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Orphan Process:</strong> A process whose parent has terminated without invoking <code>wait()</code>. Linux re-parents orphans to <code>init</code> (PID 1).</span>
+              <span class="lang-ar"><strong>العملية اليتيمة (Orphan):</strong> عملية انتهى والدها دون استدعاء <code>wait()</code>، فيتولى <code>init</code> تبنيها.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- EXAM TIP CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Midterm 2021 MCQ Spotlight: Child Process Possibilities</span>
+            <span class="callout-title lang-ar">سؤال امتحان مباشر: احتمالات إنشاء العملية الابن</span>
+            <span class="exam-badge">Midterm 2021 Q1.5</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Midterm 2021 Q1.5:</strong> <em>"When a child process is created, which of the following is a possibility in terms of execution or address space of the child process?<br>
+            a. The child process runs concurrently with the parent<br>
+            b. The child process has a new program loaded into it<br>
+            c. The child is a duplicate of the parent<br>
+            d. All the choices"</em><br>
+            ➔ <strong>Correct Answer: (d) All the choices!</strong>
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>ميدتيرم 2021 سؤال 1.5:</strong> <em>"عند إنشاء عملية ابن، أي من التالي يُعد وارداً من حيث التنفيذ أو المساحة العنوانية؟<br>
+            أ. تعمل العملية الابن بالتوازي مع الأب<br>
+            ب. يُحمّل برنامج جديد بالكامل في العملية الابن (عبر exec)<br>
+            ج. الابن نسخة مكررة ومطابقة لمساحة الأب (عبر fork)<br>
+            د. جميع ما سبق (All the choices)"</em><br>
+            ➔ <strong>الإجابة الصحيحة: (د) جميع ما سبق!</strong>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: INTERPROCESS COMMUNICATION (IPC) -->
+    <section class="content-section" id="section5">
+      <div class="section-header">
+        <div class="section-number">5</div>
+        <h3 class="section-title lang-en">Interprocess Communication (IPC): Models & Mechanisms</h3>
+        <h3 class="section-title lang-ar">التواصل بين العمليات (IPC): النماذج والآليات (سؤال مقالي 2022)</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🔄</span>
+            <span class="lang-en">Shared Memory Model</span>
+            <span class="lang-ar">نموذج الذاكرة المشتركة (Shared Memory)</span>
+          </h4>
+          <p class="card-text lang-en">
+            A region of memory shared by cooperating processes:
+          </p>
+          <p class="card-text lang-ar">
+            منطقة ذاكرة فيزيائية مشتركة تصل إليها العمليات المتعاونة:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Maximum Speed:</strong> Extremely fast; data exchange occurs at hardware memory speeds without kernel intervention after setup.</span>
+              <span class="lang-ar"><strong>سرعة قصوى:</strong> فائقة السرعة؛ يتم تبادل البيانات بسرعة الذاكرة دون تدخل النواة بعد إنشاء المنطقة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Producer-Consumer Problem:</strong> Producer produces data items into a buffer; Consumer consumes them. Implemented via circular bounded buffer (maximum items = <code>BUFFER_SIZE - 1</code>).</span>
+              <span class="lang-ar"><strong>مسألة المنتج والمستهلك:</strong> تخزين في مخزن دائري محدود (يتسع لـ <code>BUFFER_SIZE - 1</code> لتفادي الخلط بين الامتلاء والفراغ).</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Challenge:</strong> Application programmers must explicitly handle process synchronization to prevent race conditions.</span>
+              <span class="lang-ar"><strong>التحدي:</strong> يقع عبء التزامن وتفادي تضارب البيانات بالكامل على عاتق المبرمج.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>✉️</span>
+            <span class="lang-en">Message Passing Model</span>
+            <span class="lang-ar">نموذج تمرير الرسائل (Message Passing)</span>
+          </h4>
+          <p class="card-text lang-en">
+            Processes communicate and synchronize without sharing variables:
+          </p>
+          <p class="card-text lang-ar">
+            تتواصل العمليات وتتزامن دون الحاجة لمشاركة مساحة ذاكرة أو متغيرات:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Primitives:</strong> <code>send(message)</code> and <code>receive(message)</code>.</span>
+              <span class="lang-ar"><strong>الدوال الأساسية:</strong> الإرسال <code>send(message)</code> والاستقبال <code>receive(message)</code>.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Distributed Friendly:</strong> Particularly useful in distributed and networked environments (Client-Server).</span>
+              <span class="lang-ar"><strong>مثالية للشبكات:</strong> ممتازة في الأنظمة الموزعة والشبكات لعدم الحاجة لذاكرة مشتركة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Kernel Involvement:</strong> Slower than shared memory because messages must be copied across user-kernel boundaries by system calls.</span>
+              <span class="lang-ar"><strong>تدخل النواة:</strong> أبطأ من الذاكرة المشتركة بسبب نسخ البيانات بين مساحة المستخدم والنواة.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- COMPARISON TABLE: DIRECT VS INDIRECT COMMUNICATION -->
+      <h4 style="margin: 1.5rem 0 0.5rem; font-size: 1.15rem; color: var(--text-primary);" class="lang-en">Direct vs. Indirect Communication (Midterm 2022 Essay Question)</h4>
+      <h4 style="margin: 1.5rem 0 0.5rem; font-size: 1.15rem; color: var(--text-primary);" class="lang-ar">مقارنة بين الاتصال المباشر وغير المباشر (سؤال مقالي ميدتيرم 2022)</h4>
+
+      <div class="table-responsive">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th class="lang-en">Feature</th>
+              <th class="lang-ar">وجه المقارنة</th>
+              <th class="lang-en">Direct Communication (الاتصال المباشر)</th>
+              <th class="lang-ar">الاتصال المباشر (Direct)</th>
+              <th class="lang-en">Indirect Communication (الاتصال غير المباشر)</th>
+              <th class="lang-ar">الاتصال غير المباشر (Indirect)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="lang-en"><strong>Addressing / Naming</strong></td>
+              <td class="lang-ar"><strong>طريقة العنونة والتسمية</strong></td>
+              <td class="lang-en">Processes must name each other explicitly: <code>send(P, msg)</code>, <code>receive(Q, msg)</code>.</td>
+              <td class="lang-ar">تسمية صريحة للطرف الآخر: <code>send(P, msg)</code>.</td>
+              <td class="lang-en">Messages sent to and received from <strong>Mailboxes or Ports</strong>: <code>send(A, msg)</code>.</td>
+              <td class="lang-ar">ترسل وتستقبل عبر <strong>صناديق البريد (Mailboxes/Ports)</strong>: <code>send(A, msg)</code>.</td>
+            </tr>
+            <tr>
+              <td class="lang-en"><strong>Link Association</strong></td>
+              <td class="lang-ar"><strong>ارتباط مسار الاتصال</strong></td>
+              <td class="lang-en">A link is associated with <strong>exactly two processes</strong>.</td>
+              <td class="lang-ar">يرتبط المسار بـ <strong>عمليتين اثنتين فقط لا غير</strong>.</td>
+              <td class="lang-en">A link can be associated with <strong>many processes</strong> sharing the mailbox.</td>
+              <td class="lang-ar">يمكن أن يشترك في المسار <strong>عدة عمليات متعددة</strong>.</td>
+            </tr>
+            <tr>
+              <td class="lang-en"><strong>Number of Links</strong></td>
+              <td class="lang-ar"><strong>عدد المسارات بين كل زوج</strong></td>
+              <td class="lang-en">Between each pair of processes, there exists <strong>exactly one link</strong>.</td>
+              <td class="lang-ar">يوجد <strong>مسار واحد فقط</strong> بين كل زوج من العمليات.</td>
+              <td class="lang-en">Each pair of processes may share <strong>several distinct links</strong> (multiple mailboxes).</td>
+              <td class="lang-ar">يمكن لزوج العمليات أن يتشارك <strong>عدة مسارات مختلفة</strong> عبر صناديق بريد متعددة.</td>
+            </tr>
+            <tr>
+              <td class="lang-en"><strong>Link Establishment</strong></td>
+              <td class="lang-ar"><strong>إنشاء المسار</strong></td>
+              <td class="lang-en">Established automatically when processes address each other.</td>
+              <td class="lang-ar">يُنشأ تلقائياً بمجرد ذكر اسم العملية الأخرى.</td>
+              <td class="lang-en">Established only if processes share a common mailbox/port.</td>
+              <td class="lang-ar">يُنشأ فقط إذا تشاركت العمليتان نفس صندوق البريد.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- EXAM TIP CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Exam Spotlight: Rendezvous & Direct/Indirect Questions</span>
+            <span class="callout-title lang-ar">تنبيه امتحاني: مفهوم Rendezvous وأسئلة الاتصال المباشر/غير المباشر</span>
+            <span class="exam-badge">Midterm 2014, 2019, 2021 & 2022</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Midterm 2021 Q1.9 (MCQ):</strong> <em>"A blocking send() and blocking receive() is known as a(n): a. synchronized message, b. rendezvous, c. blocked message, d. asynchronous message"</em> ➔ <strong>Answer: b. Rendezvous</strong>!<br>
+            <strong>Midterm 2021 Q1.14:</strong> In direct communication, a link is associated with <em>exactly two processes</em>.<br>
+            <strong>Midterm 2014 Q1.8 & 2019 Q1.5 (T/F):</strong> <em>"In case of direct communication, messages are sent to mailboxes/ports."</em> ➔ <strong>FALSE!</strong> Mailboxes and ports belong strictly to <strong>Indirect Communication</strong>.<br>
+            <strong>Midterm 2022 Q4 (Essay Question):</strong> Full question asking for fundamental models of IPC (Shared Memory vs Message Passing) and differences between direct and indirect communication!
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>ميدتيرم 2021 سؤال 1.9:</strong> <em>"يُعرف اجتماع الإرسال الحاجز blocking send() والاستقبال الحاجز blocking receive() معاً بـ:"</em> ➔ <strong>الإجابة: Rendezvous (نقطة اللقاء/التزامن التام)</strong>.<br>
+            <strong>ميدتيرم 2021 سؤال 1.14:</strong> في الاتصال المباشر، يرتبط المسار بـ <em>عمليتين فقط بالضبط</em>.<br>
+            <strong>ميدتيرم 2014 و 2019 (صح/خطأ):</strong> <em>"في الاتصال المباشر، تُرسل الرسائل لصناديق البريد."</em> ➔ <strong>خطأ (False)!</strong> لأن صناديق البريد (Mailboxes) ميزة حصرية للاتصال <strong>غير المباشر (Indirect)</strong>.<br>
+            <strong>ميدتيرم 2022 سؤال 4 (مقالي):</strong> سؤال امتحاني كامل يطلب شرح نماذج IPC والفارق بين الاتصال المباشر وغير المباشر!
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: KEY TERMS GLOSSARY -->
+    <section class="content-section" id="section6">
+      <div class="section-header">
+        <div class="section-number">6</div>
+        <h3 class="section-title lang-en">Chapter 3 Key Terms & Exam Glossary</h3>
+        <h3 class="section-title lang-ar">قاموس المصطلحات والمفاهيم الأساسية للفصل الثالث</h3>
+      </div>
+
+      <div class="glossary-grid">
+        <div class="term-card">
+          <div class="term-en">Process</div>
+          <div class="term-ar">العملية (Process)</div>
+          <p class="term-def lang-en">A program in execution; an active entity with text, stack, data, heap, and a program counter.</p>
+          <p class="term-def lang-ar">برنامج قيد التنفيذ؛ كيان نشط يتضمن كود الآلة، المكدس، البيانات، الكومة، وعداد البرنامج.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Context Switch</div>
+          <div class="term-ar">تبديل السياق (Context Switch)</div>
+          <p class="term-def lang-en">The mechanism of saving the state of the current process into its PCB and restoring the state of the next process to run (pure overhead).</p>
+          <p class="term-def lang-ar">آلية حفظ حالة العملية الحالية في كتلتها واسترجاع حالة العملية التالية لتشغيلها (هدر زمني دون عمل نافع).</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Rendezvous</div>
+          <div class="term-ar">التزامن التام (Rendezvous)</div>
+          <p class="term-def lang-en">A tightly synchronized message-passing state occurring when both <code>send()</code> and <code>receive()</code> are blocking.</p>
+          <p class="term-def lang-ar">حالة تزامن دقيقة تحدث عندما تكون عمليتا الإرسال والاستقبال كلتاهما حاجزة ومقيدة (Blocking).</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Degree of Multiprogramming</div>
+          <div class="term-ar">درجة البرمجة المتعددة</div>
+          <p class="term-def lang-en">The number of processes loaded in main memory at the same time; directly controlled by the long-term scheduler.</p>
+          <p class="term-def lang-ar">عدد العمليات المقيمة في الذاكرة الرئيسية في نفس اللحظة؛ ويتحكم بها المجدول طويل الأجل.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">fork() & exec()</div>
+          <div class="term-ar">استدعاءات fork و exec</div>
+          <p class="term-def lang-en"><code>fork()</code> duplicates the parent's address space creating a child; <code>exec()</code> loads a new program into that space.</p>
+          <p class="term-def lang-ar">استدعاء <code>fork()</code> ينسخ مساحة عنوان الأب للابن؛ بينما <code>exec()</code> يستبدلها ببرنامج تنفيذي جديد.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Mailbox / Port</div>
+          <div class="term-ar">صندوق البريد / المنفذ (Port)</div>
+          <p class="term-def lang-en">An intermediate abstraction used in indirect message passing allowing multiple processes to communicate asynchronously.</p>
+          <p class="term-def lang-ar">وسيط تخزين وتوجيه يُستخدم في الاتصال غير المباشر لتبادل الرسائل بين عدة عمليات.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 7: INTERACTIVE CHAPTER QUIZ -->
+    <section class="quiz-section" id="quiz">
+      <div class="quiz-header">
+        <h3 class="quiz-title lang-en">Interactive Knowledge Check</h3>
+        <h3 class="quiz-title lang-ar">اختبار تقييم المعرفة التفاعلي للفصل الثالث</h3>
+        <p class="quiz-subtitle lang-en">5 High-Yield MCQs curated directly from Cairo University Past Midterms & Quizzes</p>
+        <p class="quiz-subtitle lang-ar">5 أسئلة اختيار من متعدد مستخلصة مباشرة من امتحانات الميدتيرم السابقة</p>
+      </div>
+
+      <form id="quizForm">
+
+        <!-- QUESTION 1 -->
+        <div class="question-block" data-question="1">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 1 of 5</span>
+            <span class="question-badge lang-ar">السؤال 1 من 5</span>
+            <span class="question-exam-tag">Midterm 2021 Q1.1</span>
+          </div>
+          <p class="question-text lang-en">
+            Which memory section of a process contains temporary data such as function parameters, return addresses, and local variables?
+          </p>
+          <p class="question-text lang-ar">
+            أي قسم من أقسام العملية في الذاكرة يحتوي على البيانات المؤقتة مثل معاملات الدوال، عناوين العودة، والمتغيرات المحلية؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q1" value="A">
+              <span class="lang-en">A) Text section</span>
+              <span class="lang-ar">أ) قسم النص (Text section)</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q1" value="B">
+              <span class="lang-en">B) Data section</span>
+              <span class="lang-ar">ب) قسم البيانات (Data section)</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q1" value="C">
+              <span class="lang-en">C) Program Counter</span>
+              <span class="lang-ar">ج) عداد البرنامج (Program Counter)</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q1" value="D">
+              <span class="lang-en">D) Stack</span>
+              <span class="lang-ar">د) المكدس (Stack)</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-1"></div>
+        </div>
+
+        <!-- QUESTION 2 -->
+        <div class="question-block" data-question="2">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 2 of 5</span>
+            <span class="question-badge lang-ar">السؤال 2 من 5</span>
+            <span class="question-exam-tag">Midterm 2021 Q1.9</span>
+          </div>
+          <p class="question-text lang-en">
+            In interprocess communication (IPC) synchronization, what is a communication exchange known as when <strong>both</strong> the <code>send()</code> and <code>receive()</code> operations are blocking?
+          </p>
+          <p class="question-text lang-ar">
+            في تزامن التواصل بين العمليات (IPC)، بماذا يُسمى التبادل عندما تكون <strong>كلتا</strong> عمليتي الإرسال <code>send()</code> والاستقبال <code>receive()</code> حاجزتين ومقيدتين (Blocking)؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q2" value="A">
+              <span class="lang-en">A) A synchronized message</span>
+              <span class="lang-ar">أ) رسالة متزامنة (Synchronized message)</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q2" value="B">
+              <span class="lang-en">B) A rendezvous</span>
+              <span class="lang-ar">ب) نقطة لقاء وتزامن تام (Rendezvous)</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q2" value="C">
+              <span class="lang-en">C) A blocked message</span>
+              <span class="lang-ar">ج) رسالة محجوبة (Blocked message)</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q2" value="D">
+              <span class="lang-en">D) An asynchronous message</span>
+              <span class="lang-ar">د) رسالة غير متزامنة (Asynchronous message)</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-2"></div>
+        </div>
+
+        <!-- QUESTION 3 -->
+        <div class="question-block" data-question="3">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 3 of 5</span>
+            <span class="question-badge lang-ar">السؤال 3 من 5</span>
+            <span class="question-exam-tag">Midterm 2014 Q1.6 & 2019 Q1.8</span>
+          </div>
+          <p class="question-text lang-en">
+            Which scheduler directly <strong>controls the degree of multiprogramming</strong> (the number of processes residing in main memory)?
+          </p>
+          <p class="question-text lang-ar">
+            أي مجدول من المجدولات هو المسؤول المباشر عن <strong>التحكم في درجة البرمجة المتعددة</strong> (عدد العمليات المقيمة بالذاكرة الرئيسية)؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q3" value="A">
+              <span class="lang-en">A) Short-term scheduler (CPU scheduler)</span>
+              <span class="lang-ar">أ) المجدول قصير الأجل (مجدول المعالج CPU scheduler)</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q3" value="B">
+              <span class="lang-en">B) Long-term scheduler (Job scheduler)</span>
+              <span class="lang-ar">ب) المجدول طويل الأجل (مجدول الوظائف Job scheduler)</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q3" value="C">
+              <span class="lang-en">C) Interrupt vector dispatcher</span>
+              <span class="lang-ar">ج) موزع متجه المقاطعات</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q3" value="D">
+              <span class="lang-en">D) DMA controller</span>
+              <span class="lang-ar">د) وحدة النفاذ المباشر للذاكرة (DMA)</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-3"></div>
+        </div>
+
+        <!-- QUESTION 4 -->
+        <div class="question-block" data-question="4">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 4 of 5</span>
+            <span class="question-badge lang-ar">السؤال 4 من 5</span>
+            <span class="question-exam-tag">Midterm 2021 Q1.14 & 2019 Q1.5</span>
+          </div>
+          <p class="question-text lang-en">
+            Which of the following statements is <strong>TRUE</strong> regarding <strong>Direct Communication</strong> in message passing?
+          </p>
+          <p class="question-text lang-ar">
+            أي من العبارات التالية تُعتبر <strong>صحيحة</strong> فيما يتعلق بـ <strong>الاتصال المباشر (Direct Communication)</strong> في تمرير الرسائل؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q4" value="A">
+              <span class="lang-en">A) Messages are always sent to and retrieved from shared mailboxes or ports</span>
+              <span class="lang-ar">أ) ترسل الرسائل وتسترجع دائماً من صناديق بريد أو منافذ مشتركة</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q4" value="B">
+              <span class="lang-en">B) A communication link is associated with exactly two processes</span>
+              <span class="lang-ar">ب) يرتبط مسار الاتصال بعمليتين اثنتين فقط لا غير (Associated with exactly two processes)</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q4" value="C">
+              <span class="lang-en">C) Between each pair of communicating processes there exist an infinite number of links</span>
+              <span class="lang-ar">ج) يوجد عدد لا نهائي من مسارات الاتصال بين كل زوج من العمليات</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q4" value="D">
+              <span class="lang-en">D) The link requires hardware DMA channels to establish</span>
+              <span class="lang-ar">د) يتطلب إنشاء المسار توفر قنوات عتادية لـ DMA</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-4"></div>
+        </div>
+
+        <!-- QUESTION 5 -->
+        <div class="question-block" data-question="5">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 5 of 5</span>
+            <span class="question-badge lang-ar">السؤال 5 من 5</span>
+            <span class="question-exam-tag">Midterm 2022 Q1.8 & 2021 Q1.6</span>
+          </div>
+          <p class="question-text lang-en">
+            What is the accurate state description of a process in the <strong>Ready</strong> state?
+          </p>
+          <p class="question-text lang-ar">
+            ما هو الوصف الدقيق لحالة العملية عندما تكون في حالة <strong>الجاهزية (Ready)</strong>؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q5" value="A">
+              <span class="lang-en">A) The process is waiting for an I/O device or external event to complete</span>
+              <span class="lang-ar">أ) العملية تنتظر انتهاء جهاز إدخال/إخراج أو وقوع حدث خارجي</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q5" value="B">
+              <span class="lang-en">B) The process is residing in memory and waiting only to be assigned to a processor</span>
+              <span class="lang-ar">ب) العملية مقيمة في الذاكرة وجاهزة تماماً، وتنتظر فقط تخصيص المعالج لها للبدء بالتنفيذ</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q5" value="C">
+              <span class="lang-en">C) The process is being terminated and its PCB is being destroyed</span>
+              <span class="lang-ar">ج) العملية قيد الإنهاء ويجري تدمير كتلة التحكم الخاصة بها</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q5" value="D">
+              <span class="lang-en">D) The process has no allocated Program Counter or registers</span>
+              <span class="lang-ar">د) العملية لا تمتلك عداد برنامج ولا مسجلات معالج مخصصة</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-5"></div>
+        </div>
+
+        <!-- Actions -->
+        <div class="quiz-actions">
+          <button type="button" id="submitQuizBtn" class="btn-quiz-submit">
+            <span class="lang-en">Submit Quiz</span>
+            <span class="lang-ar">تسليم الإجابات</span>
+          </button>
+          <button type="button" id="resetQuizBtn" class="btn-quiz-reset">
+            <span class="lang-en">Reset</span>
+            <span class="lang-ar">إعادة الاختبار</span>
+          </button>
+        </div>
+
+      </form>
+
+      <!-- Score Summary Box -->
+      <div id="scoreBox" class="score-summary-box">
+        <div class="score-circle">
+          <span class="score-number" id="scoreNum">0/5</span>
+          <span class="score-percent" id="scorePercent">0%</span>
+        </div>
+        <h4 class="score-status" id="scoreGrade">Excellent!</h4>
+        <p class="score-message" id="scoreFeedback">Detailed evaluation feedback appears here.</p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Page Footer -->
+  <footer class="page-footer">
+    <p class="lang-en">
+      OS MasterStudy &copy; 2026 &bull; Based on Silberschatz Operating System Concepts (9th Ed) & Dr. Khaled Wassif's Lectures & Exams.
+    </p>
+    <p class="lang-ar">
+      دليل أنظمة التشغيل الشامل &copy; 2026 &bull; مستند إلى كتاب سلبرشاتز (Silberschatz 9th Ed) ومحاضرات وامتحانات د. خالد وصيف (كلية الحاسبات والذكاء الاصطناعي).
+    </p>
+  </footer>
+
+  <!-- Interactive JavaScript Engine -->
+  <script>
+    (function() {
+      const QUIZ_DATA = {
+        q1: {
+          correct: 'D',
+          expEn: '<strong>Correct (D):</strong> The Stack contains temporary data such as function parameters, return addresses, and local variables. (Midterm 2021 Q1.1 directly). The Text section stores code, the Data section stores global variables, and the Heap holds dynamically allocated memory.',
+          expAr: '<strong>صحيح (د):</strong> يحتوي المكدس (Stack) على البيانات المؤقتة كمعاملات الدوال وعناوين العودة والمتغيرات المحلية (ميدتيرم 2021). بينما يخزن قسم Text الكود، وقسم Data المتغيرات العامة، والكومة Heap البيانات الديناميكية.'
+        },
+        q2: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> When both send() and receive() are blocking, this synchronization state is defined as a <em>Rendezvous</em> (Midterm 2021 Q1.9).',
+          expAr: '<strong>صحيح (ب):</strong> عند حظر كل من عمليتي الإرسال والاستقبال حتى تسليم الرسالة، يُطلق على هذه الحالة مصطلح <em>Rendezvous</em> (ميدتيرم 2021 بنصه).'
+        },
+        q3: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> The Long-Term Scheduler (Job Scheduler) selects jobs from disk and loads them into memory, directly controlling the <em>degree of multiprogramming</em> (Midterm 2014 Q1.6). The short-term scheduler selects from ready processes and has no control over the degree.',
+          expAr: '<strong>صحيح (ب):</strong> المجدول طويل الأجل (Job scheduler) هو المتحكم الوحيد في درجة البرمجة المتعددة لأنه هو الذي يقرر كم عملية تُحمّل إلى الذاكرة (ميدتيرم 2014 سؤال 1.6).'
+        },
+        q4: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> In direct communication, a link is established automatically and is associated with <em>exactly two processes</em>; exactly one link exists between each pair. Mailboxes and ports belong strictly to indirect communication (Midterm 2021 Q1.14 & 2019 Q1.5).',
+          expAr: '<strong>صحيح (ب):</strong> في الاتصال المباشر، يرتبط المسار بـ <em>عمليتين فقط</em>، ويوجد مسار واحد فقط بين كل زوج. أما صناديق البريد والمنافذ فهي خاصة حصرياً بالاتصال غير المباشر (ميدتيرم 2021 و 2019).'
+        },
+        q5: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> The Ready state indicates that a process is loaded into RAM with all necessary resources and is waiting <em>only to be assigned to a CPU core</em>. Waiting for an I/O device or event is the definition of the Waiting (Blocked) state (Midterm 2022 Q1.8).',
+          expAr: '<strong>صحيح (ب):</strong> حالة الجاهزية (Ready) تعني أن العملية مقيمة بالذاكرة ومكتملة الموارد وتنتظر <em>فقط تخصيص المعالج لها</em>. أما انتظار جهاز I/O أو حدث خارجي فهو تعريف حالة الانتظار Waiting (ميدتيرم 2022 سؤال 1.8).'
+        }
+      };
+
+      let currentLang = localStorage.getItem('os_guide_lang') || 'en';
+      let currentTheme = localStorage.getItem('os_guide_theme') || 'dark';
+
+      const themeToggleBtn = document.getElementById('themeToggle');
+      const langToggleBtn = document.getElementById('langToggle');
+      const themeIcon = document.getElementById('themeIcon');
+      const submitQuizBtn = document.getElementById('submitQuizBtn');
+      const resetQuizBtn = document.getElementById('resetQuizBtn');
+      const scoreBox = document.getElementById('scoreBox');
+
+      function applyTheme(theme) {
+        currentTheme = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('os_guide_theme', theme);
+        if (theme === 'light') {
+          themeIcon.textContent = '🌙';
+          document.getElementById('themeTextEn').textContent = 'Dark';
+          document.getElementById('themeTextAr').textContent = 'ليلي';
+        } else {
+          themeIcon.textContent = '☀️';
+          document.getElementById('themeTextEn').textContent = 'Light';
+          document.getElementById('themeTextAr').textContent = 'نهاري';
+        }
+      }
+
+      function applyLanguage(lang) {
+        currentLang = lang;
+        document.body.setAttribute('data-lang', lang);
+        document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+        document.documentElement.setAttribute('lang', lang);
+        localStorage.setItem('os_guide_lang', lang);
+
+        Object.keys(QUIZ_DATA).forEach((key, index) => {
+          const expDiv = document.getElementById(`exp-${index + 1}`);
+          if (expDiv && expDiv.classList.contains('show')) {
+            expDiv.innerHTML = lang === 'ar' ? QUIZ_DATA[key].expAr : QUIZ_DATA[key].expEn;
+          }
+        });
+      }
+
+      themeToggleBtn.addEventListener('click', () => {
+        applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+      });
+
+      langToggleBtn.addEventListener('click', () => {
+        applyLanguage(currentLang === 'en' ? 'ar' : 'en');
+      });
+
+      submitQuizBtn.addEventListener('click', () => {
+        let score = 0;
+        const total = Object.keys(QUIZ_DATA).length;
+
+        Object.keys(QUIZ_DATA).forEach((key, index) => {
+          const qIndex = index + 1;
+          const qBlock = document.querySelector(`.question-block[data-question="${qIndex}"]`);
+          const selectedOption = document.querySelector(`input[name="${key}"]:checked`);
+          const expDiv = document.getElementById(`exp-${qIndex}`);
+          const optionLabels = qBlock.querySelectorAll('.option-label');
+
+          optionLabels.forEach(label => {
+            label.classList.remove('is-correct', 'is-wrong');
+          });
+          qBlock.classList.remove('correct-highlight', 'incorrect-highlight');
+
+          const correctVal = QUIZ_DATA[key].correct;
+
+          if (selectedOption) {
+            const userVal = selectedOption.value;
+            if (userVal === correctVal) {
+              score++;
+              qBlock.classList.add('correct-highlight');
+              selectedOption.closest('.option-label').classList.add('is-correct');
+            } else {
+              qBlock.classList.add('incorrect-highlight');
+              selectedOption.closest('.option-label').classList.add('is-wrong');
+              const correctLabel = qBlock.querySelector(`.option-label[data-opt="${correctVal}"]`);
+              if (correctLabel) correctLabel.classList.add('is-correct');
+            }
+          } else {
+            qBlock.classList.add('incorrect-highlight');
+            const correctLabel = qBlock.querySelector(`.option-label[data-opt="${correctVal}"]`);
+            if (correctLabel) correctLabel.classList.add('is-correct');
+          }
+
+          expDiv.className = 'question-explanation show explanation-correct';
+          expDiv.innerHTML = currentLang === 'ar' ? QUIZ_DATA[key].expAr : QUIZ_DATA[key].expEn;
+        });
+
+        const percentage = Math.round((score / total) * 100);
+        document.getElementById('scoreNum').textContent = `${score}/${total}`;
+        document.getElementById('scorePercent').textContent = `${percentage}%`;
+
+        const gradeElem = document.getElementById('scoreGrade');
+        const feedbackElem = document.getElementById('scoreFeedback');
+
+        if (score === 5) {
+          gradeElem.textContent = currentLang === 'ar' ? 'ممتاز جداً! (100%)' : 'Outstanding Master Level! (100%)';
+          gradeElem.style.color = 'var(--accent-emerald)';
+          feedbackElem.textContent = currentLang === 'ar' 
+            ? 'مستوى عبقري! لقد استوعبت أدق تفاصيل العمليات، المجدولات، ونماذج التواصل IPC وجاهز لعلامة الميدتيرم الكاملة.'
+            : 'Flawless performance! You have mastered all core Chapter 3 concepts, scheduling mechanisms, and IPC models from the midterms.';
+        } else if (score >= 3) {
+          gradeElem.textContent = currentLang === 'ar' ? 'أداء جيد جداً!' : 'Good Job! Solid Foundation';
+          gradeElem.style.color = 'var(--accent-cyan)';
+          feedbackElem.textContent = currentLang === 'ar'
+            ? 'أداء متميز. راجع التعليلات الموضحة أسفل الأسئلة لتثبيت الفروق الدقيقة (خاصة الفرق بين Ready و Waiting، والتحكم في درجة البرمجة المتعددة).'
+            : 'Good performance! Review the detailed explanations on the questions you missed (especially Ready vs. Waiting, and degree of multiprogramming control).';
+        } else {
+          gradeElem.textContent = currentLang === 'ar' ? 'يحتاج إلى مراجعة' : 'Needs Review & Practice';
+          gradeElem.style.color = 'var(--accent-rose)';
+          feedbackElem.textContent = currentLang === 'ar'
+            ? 'يوصى بإعادة مراجعة جدول مقارنة المجدولات الثلاثة وصناديق فخاخ الامتحانات بالأعلى ثم إعادة المحاولة.'
+            : 'We recommend reviewing the 3-Schedulers comparison table and the Exam Trap callout boxes above, then retrying the quiz to master these topics.';
+        }
+
+        scoreBox.classList.add('show');
+        scoreBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+
+      resetQuizBtn.addEventListener('click', () => {
+        document.getElementById('quizForm').reset();
+        document.querySelectorAll('.question-block').forEach(b => {
+          b.classList.remove('correct-highlight', 'incorrect-highlight');
+        });
+        document.querySelectorAll('.option-label').forEach(l => {
+          l.classList.remove('is-correct', 'is-wrong');
+        });
+        document.querySelectorAll('.question-explanation').forEach(e => {
+          e.classList.remove('show');
+          e.innerHTML = '';
+        });
+        scoreBox.classList.remove('show');
+      });
+
+      applyTheme(currentTheme);
+      applyLanguage(currentLang);
+    })();
+  </script>
+</body>
+</html>

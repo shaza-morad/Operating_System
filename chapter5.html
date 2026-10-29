@@ -1,0 +1,1876 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chapter 5: Process Synchronization | OS MasterStudy</title>
+  <style>
+    :root {
+      --font-en: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      --font-ar: 'Segoe UI', Tahoma, 'Cairo', 'Tajawal', sans-serif;
+      --transition-speed: 0.3s;
+      
+      /* Dark Theme (Default) */
+      --bg-body: #0b0f19;
+      --bg-surface: #111827;
+      --bg-card: #1f2937;
+      --bg-card-hover: #283548;
+      --bg-glass: rgba(17, 24, 39, 0.88);
+      --border-color: #374151;
+      --border-focus: #6366f1;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-primary: #6366f1;
+      --accent-primary-hover: #4f46e5;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --callout-tip-bg: rgba(245, 158, 11, 0.1);
+      --callout-tip-border: #f59e0b;
+      --callout-hard-bg: rgba(99, 102, 241, 0.1);
+      --callout-hard-border: #6366f1;
+      --table-header-bg: #1e293b;
+      --table-zebra-bg: #182234;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="light"] {
+      --bg-body: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --bg-glass: rgba(255, 255, 255, 0.92);
+      --border-color: #e2e8f0;
+      --border-focus: #4f46e5;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --accent-primary: #4f46e5;
+      --accent-primary-hover: #4338ca;
+      --accent-cyan: #0284c7;
+      --accent-emerald: #059669;
+      --accent-amber: #d97706;
+      --accent-rose: #e11d48;
+      --callout-tip-bg: #fffbeb;
+      --callout-tip-border: #d97706;
+      --callout-hard-bg: #eef2ff;
+      --callout-hard-border: #4f46e5;
+      --table-header-bg: #f1f5f9;
+      --table-zebra-bg: #f8fafc;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-en);
+      background-color: var(--bg-body);
+      color: var(--text-primary);
+      line-height: 1.65;
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+      overflow-x: hidden;
+    }
+
+    [data-lang="en"] .lang-ar {
+      display: none !important;
+    }
+    [data-lang="ar"] .lang-en {
+      display: none !important;
+    }
+    [data-lang="ar"] body, 
+    html[dir="rtl"] {
+      font-family: var(--font-ar);
+    }
+
+    .header-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: var(--bg-glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 800;
+      font-size: 1.15rem;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    }
+
+    .logo-text h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .logo-text span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .chapter-links {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      list-style: none;
+    }
+
+    .chapter-link {
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+      transition: all var(--transition-speed);
+    }
+
+    .chapter-link:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-color: var(--border-color);
+    }
+
+    .chapter-link.active {
+      background: var(--accent-primary);
+      color: white;
+      box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .btn-toggle {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all var(--transition-speed);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-toggle:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-primary);
+      transform: translateY(-1px);
+    }
+
+    .main-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(6, 182, 212, 0.08));
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 2.25rem 2rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-banner::after {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, var(--accent-primary) 0%, transparent 70%);
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: var(--accent-primary);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero-title {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+      line-height: 1.25;
+      color: var(--text-primary);
+    }
+
+    .hero-desc {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      max-width: 900px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 0.85rem 1.25rem;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .content-section {
+      margin-bottom: 3rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .section-number {
+      background: var(--accent-primary);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.4rem;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-speed);
+    }
+
+    .info-card:hover {
+      border-color: var(--accent-primary);
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-text {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .card-list {
+      margin-top: 0.75rem;
+      padding-left: 1.25rem;
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+    }
+
+    [dir="rtl"] .card-list {
+      padding-left: 0;
+      padding-right: 1.25rem;
+    }
+
+    .card-list li {
+      margin-bottom: 0.4rem;
+    }
+
+    .code-block {
+      background: #080d1a;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 0.85rem 0;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.88rem;
+      color: #38bdf8;
+      overflow-x: auto;
+      line-height: 1.5;
+      direction: ltr;
+      text-align: left;
+    }
+
+    .callout {
+      border-radius: 10px;
+      padding: 1.25rem 1.4rem;
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      border-left: 4px solid transparent;
+    }
+
+    [dir="rtl"] .callout {
+      border-left: none;
+      border-right: 4px solid transparent;
+    }
+
+    .callout-exam {
+      background: var(--callout-tip-bg);
+      border-color: var(--callout-tip-border);
+    }
+
+    .callout-hard {
+      background: var(--callout-hard-bg);
+      border-color: var(--callout-hard-border);
+    }
+
+    .callout-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .callout-content {
+      flex: 1;
+    }
+
+    .callout-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .callout-title {
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .callout-exam .callout-title {
+      color: var(--accent-amber);
+    }
+
+    .callout-hard .callout-title {
+      color: var(--accent-primary);
+    }
+
+    .exam-badge {
+      background: var(--accent-amber);
+      color: #000;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .callout-body {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.92rem;
+    }
+
+    [dir="rtl"] .compare-table {
+      text-align: right;
+    }
+
+    .compare-table th {
+      background: var(--table-header-bg);
+      color: var(--text-primary);
+      padding: 0.85rem 1rem;
+      font-weight: 700;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .compare-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    .compare-table tr:nth-child(even) td {
+      background: var(--table-zebra-bg);
+    }
+
+    .compare-table tr:hover td {
+      background: var(--bg-card-hover);
+    }
+
+    .steps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      margin: 1.25rem 0;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+    }
+
+    .step-num {
+      background: var(--accent-cyan);
+      color: #000;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .step-text h4 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.2rem;
+    }
+
+    .step-text p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .glossary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .term-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      transition: all var(--transition-speed);
+    }
+
+    .term-card:hover {
+      border-color: var(--accent-emerald);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .term-en {
+      font-weight: 700;
+      color: var(--accent-emerald);
+      font-size: 1rem;
+      margin-bottom: 0.15rem;
+    }
+
+    .term-ar {
+      font-weight: 700;
+      color: var(--accent-cyan);
+      font-size: 0.95rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .term-def {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+    }
+
+    .quiz-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 2.25rem 2rem;
+      margin-top: 3.5rem;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .quiz-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .quiz-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+    }
+
+    .quiz-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .question-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: border-color var(--transition-speed);
+    }
+
+    .question-block.correct-highlight {
+      border-color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .question-block.incorrect-highlight {
+      border-color: var(--accent-rose);
+      background: rgba(244, 63, 94, 0.05);
+    }
+
+    .question-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .question-badge {
+      background: var(--table-header-bg);
+      color: var(--accent-cyan);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    .question-exam-tag {
+      font-size: 0.75rem;
+      color: var(--accent-amber);
+      font-weight: 600;
+    }
+
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      line-height: 1.4;
+    }
+
+    .options-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .option-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.92rem;
+      transition: all var(--transition-speed);
+    }
+
+    .option-label:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+      border-color: var(--border-focus);
+    }
+
+    .option-label input[type="radio"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border-color);
+      border-radius: 50%;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .option-label input[type="radio"]:checked {
+      border-color: var(--accent-primary);
+      background-color: var(--accent-primary);
+      box-shadow: inset 0 0 0 3px var(--bg-surface);
+    }
+
+    .option-label.is-correct {
+      border-color: var(--accent-emerald) !important;
+      background: rgba(16, 185, 129, 0.15) !important;
+      color: var(--accent-emerald) !important;
+      font-weight: 700;
+    }
+
+    .option-label.is-wrong {
+      border-color: var(--accent-rose) !important;
+      background: rgba(244, 63, 94, 0.15) !important;
+      color: var(--accent-rose) !important;
+    }
+
+    .question-explanation {
+      margin-top: 1rem;
+      padding: 0.85rem 1.1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      display: none;
+    }
+
+    .question-explanation.show {
+      display: block;
+    }
+
+    .explanation-correct {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--accent-emerald);
+      color: var(--text-primary);
+    }
+
+    .quiz-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 2rem;
+    }
+
+    .btn-quiz-submit {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      color: white;
+      border: none;
+      padding: 0.85rem 2.2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .btn-quiz-submit:hover {
+      opacity: 0.92;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.45);
+    }
+
+    .btn-quiz-reset {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 0.85rem 1.8rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+    }
+
+    .btn-quiz-reset:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .score-summary-box {
+      margin-top: 2rem;
+      padding: 2rem;
+      border-radius: 12px;
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      text-align: center;
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .score-summary-box.show {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .score-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--table-header-bg);
+      border: 4px solid var(--accent-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+    }
+
+    .score-number {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      line-height: 1;
+    }
+
+    .score-percent {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .score-status {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .score-message {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .page-footer {
+      border-top: 1px solid var(--border-color);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      background: var(--bg-surface);
+    }
+
+    @media (max-width: 868px) {
+      .nav-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .chapter-links {
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+      }
+      .hero-title {
+        font-size: 1.6rem;
+      }
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body data-lang="en">
+
+  <!-- Sticky Top Header & Navigation -->
+  <header class="header-nav">
+    <div class="nav-container">
+      <a href="chapter1.html" class="logo-area">
+        <div class="logo-icon">OS</div>
+        <div class="logo-text">
+          <h1 class="lang-en">OS MasterStudy</h1>
+          <h1 class="lang-ar">دليل أنظمة التشغيل</h1>
+          <span class="lang-en">BCS241 Course Guide</span>
+          <span class="lang-ar">مقرر BCS241 - م/د. خالد وصيف</span>
+        </div>
+      </a>
+
+      <!-- Chapter Switcher Links -->
+      <nav>
+        <ul class="chapter-links">
+          <li><a href="chapter1.html" class="chapter-link">Ch 1: Intro</a></li>
+          <li><a href="chapter2.html" class="chapter-link">Ch 2: Structure</a></li>
+          <li><a href="chapter3.html" class="chapter-link">Ch 3: Processes</a></li>
+          <li><a href="chapter5.html" class="chapter-link active">Ch 5: Sync</a></li>
+          <li><a href="chapter6.html" class="chapter-link">Ch 6: Sched</a></li>
+        </ul>
+      </nav>
+
+      <!-- Controls -->
+      <div class="nav-controls">
+        <button id="themeToggle" class="btn-toggle" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+          <span id="themeIcon">☀️</span>
+          <span class="lang-en" id="themeTextEn">Light</span>
+          <span class="lang-ar" id="themeTextAr">نهاري</span>
+        </button>
+        <button id="langToggle" class="btn-toggle" title="Toggle English/Arabic" aria-label="Toggle Language">
+          <span>🌐</span>
+          <span class="lang-en">العربية</span>
+          <span class="lang-ar">English</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-container">
+
+    <!-- Hero Header Banner -->
+    <header class="hero-banner">
+      <span class="hero-badge lang-en">Chapter 5 Study Guide</span>
+      <span class="hero-badge lang-ar">دليل دراسة الفصل الخامس</span>
+
+      <h2 class="hero-title lang-en">Process Synchronization & Concurrency</h2>
+      <h2 class="hero-title lang-ar">تزامن العمليات والتزامن البرمجي</h2>
+
+      <p class="hero-desc lang-en">
+        Master the Critical-Section Problem and its three mandatory criteria (Mutual Exclusion, Progress, Bounded Waiting), Race Conditions, Peterson's Algorithm, Hardware Instructions (test_and_set, compare_and_swap), Semaphores with waiting queues (eliminating busy waiting), and the classical synchronization problems (Readers-Writers and Bounded-Buffer).
+      </p>
+      <p class="hero-desc lang-ar">
+        أتقن معضلة القسم الحرج (Critical-Section Problem) وشروطها الثلاثة الإلزامية (الاستبعاد المتبادل، التقدم، والانتظار المحدود)، حالة التسابق (Race Condition)، خوارزمية بيترسون، تعليمات العتاد الذرية، السيمافورات المزودة بطوابير انتظار (بدون انتظار عاطل)، والمسائل الكلاسيكية (القراء والكتّاب، والمخزن المؤقت المحدود).
+      </p>
+
+      <div class="hero-stats">
+        <div class="stat-card">
+          <span class="stat-value">39 Slides</span>
+          <span class="stat-label lang-en">Lecture Material</span>
+          <span class="stat-label lang-ar">محتوى المحاضرة</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" style="color: var(--accent-amber);">7 Marks Essay</span>
+          <span class="stat-label lang-en">Highest Exam Weight</span>
+          <span class="stat-label lang-ar">السؤال الأثقل درجات</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" style="color: var(--accent-emerald);">Midterms '19,'21,'22</span>
+          <span class="stat-label lang-en">Exam Frequency</span>
+          <span class="stat-label lang-ar">تكرار الامتحانات</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">5 MCQs</span>
+          <span class="stat-label lang-en">Interactive Quiz</span>
+          <span class="stat-label lang-ar">اختبار تفاعلي</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- SECTION 1: RACE CONDITIONS & CRITICAL SECTION PROBLEM -->
+    <section class="content-section" id="section1">
+      <div class="section-header">
+        <div class="section-number">1</div>
+        <h3 class="section-title lang-en">Race Conditions & The Critical-Section Problem</h3>
+        <h3 class="section-title lang-ar">حالة التسابق (Race Condition) ومعضلة القسم الحرج</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🏁</span>
+            <span class="lang-en">What is a Race Condition?</span>
+            <span class="lang-ar">ما هي حالة التسابق (Race Condition)؟</span>
+          </h4>
+          <p class="card-text lang-en">
+            A situation where several processes access and manipulate the same shared data concurrently, and the <strong>outcome of the execution depends on the particular order</strong> in which the access takes place.
+          </p>
+          <p class="card-text lang-ar">
+            موقف تصل فيه عدة عمليات متزامنة إلى نفس البيانات المشتركة وتعدلها معاً، بحيث <strong>تعتمد النتيجة النهائية على الترتيب الزمني الدقيق</strong> لتنفيذ التعليمات.
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Producer-Consumer Counter Example:</strong> If <code>counter++</code> (3 assembly instructions: load, increment, store) and <code>counter--</code> (load, decrement, store) interleave, the final value of <code>counter</code> can incorrectly be 4, 5, or 6 instead of the correct 5!</span>
+              <span class="lang-ar"><strong>مثال العداد:</strong> بما أن زيادة العداد ونقصانه تنقسم كل منها لـ 3 تعليمات بلغة الآلة، فإن تداخلهما ينتج عنه قيمة خاطئة (4 أو 6 بدلاً من 5).</span>
+            </li>
+            <li>
+              <span class="lang-en">To prevent race conditions, concurrent processes must be synchronized!</span>
+              <span class="lang-ar">لمنع حالة التسابق، يجب مزامنة العمليات المتزامنة وتنسيق وصولها للبيانات.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🛡️</span>
+            <span class="lang-en">The 3 Critical-Section Requirements</span>
+            <span class="lang-ar">الشروط الثلاثة الإلزامية لحل معضلة القسم الحرج</span>
+          </h4>
+          <p class="card-text lang-en">
+            Any valid solution to the critical-section problem <strong>MUST satisfy ALL THREE</strong> requirements simultaneously:
+          </p>
+          <p class="card-text lang-ar">
+            أي حل مقبول لمعضلة القسم الحرج <strong>يجب أن يحقق الشروط الثلاثة معاً</strong> بلا استثناء:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>1. Mutual Exclusion (الاستبعاد المتبادل):</strong> If process $P_i$ is executing in its critical section, then no other processes can be executing in their critical sections.</span>
+              <span class="lang-ar"><strong>1. الاستبعاد المتبادل:</strong> إذا كانت العملية $P_i$ تنفذ قسمها الحرج، يُمنع منعاً باتاً دخول أي عملية أخرى لقسمها الحرج.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>2. Progress (التقدم):</strong> If no process is in its critical section and some processes wish to enter, only those processes not in their remainder sections can participate in deciding who enters next, and this selection <strong>cannot be postponed indefinitely</strong>.</span>
+              <span class="lang-ar"><strong>2. التقدم:</strong> إذا كان القسم الحرج شاغراً وهناك عمليات ترغب بالدخول، فلا يجوز تأجيل اختيار العملية التالية لأجل غير مسمى.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>3. Bounded Waiting (الانتظار المحدود):</strong> A bound must exist on the number of times that other processes are allowed to enter their critical sections after a process has made a request and before that request is granted (prevents starvation!).</span>
+              <span class="lang-ar"><strong>3. الانتظار المحدود:</strong> يجب وضع حد أقصى لعدد المرات التي يُسمح فيها للعمليات الأخرى بالدخول بعد أن تقدمت عملية بطلب، لمنع التجويع (Starvation).</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- EXAM TIP CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Past Exam True/False Trap: Critical Section Requirements</span>
+            <span class="callout-title lang-ar">فخ امتحاني خبيث (شروط القسم الحرج)</span>
+            <span class="exam-badge">Midterm 2019 Q1.10</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Midterm 2019 Q1.10:</strong> <em>"Any solution to the critical-section problem must satisfy at least one of three requirements."</em> ➔ <strong>FALSE!</strong><br>
+            <strong>Explanation:</strong> A valid solution cannot satisfy just "at least one" requirement; it <strong>must satisfy ALL THREE requirements</strong>: Mutual Exclusion, Progress, AND Bounded Waiting!
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>سؤال ميدتيرم 2019:</strong> <em>"أي حل لمعضلة القسم الحرج يجب أن يحقق على الأقل شرطاً واحداً من الشروط الثلاثة."</em> ➔ <strong>خطأ (False)!</strong><br>
+            <strong>التعليل:</strong> لا يكفي تحقيق شرط واحد، بل <strong>يجب تحقيق الشروط الثلاثة معاً</strong>: الاستبعاد المتبادل، والتقدم، والانتظار المحدود!
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: PETERSON'S SOLUTION & HARDWARE LOCKS -->
+    <section class="content-section" id="section2">
+      <div class="section-header">
+        <div class="section-number">2</div>
+        <h3 class="section-title lang-en">Peterson's Solution & Hardware Synchronization</h3>
+        <h3 class="section-title lang-ar">حل بيترسون (Peterson's Solution) وتزامن العتاد</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🧠</span>
+            <span class="lang-en">Peterson's Algorithm (2 Processes)</span>
+            <span class="lang-ar">خوارزمية بيترسون (لعمليتين $P_i$ و $P_j$)</span>
+          </h4>
+          <p class="card-text lang-en">
+            A software-based solution sharing two variables: <code>int turn;</code> and <code>boolean flag[2];</code>:
+          </p>
+          <p class="card-text lang-ar">
+            حل برمجي كلاسيكي يعتمد على متغيرين مشتركين: <code>turn</code> (الدور) ومصفوفة الأعلام <code>flag[2]</code>:
+          </p>
+          <div class="code-block">
+do {
+    flag[i] = true;
+    turn = j;
+    while (flag[j] && turn == j);
+
+    /* Critical Section */
+
+    flag[i] = false;
+
+    /* Remainder Section */
+} while (true);
+          </div>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><code>flag[i] = true</code> signals: "I am ready to enter the critical section."</span>
+              <span class="lang-ar"><code>flag[i] = true</code> تعني: "أنا جاهز وأرغب بالدخول."</span>
+            </li>
+            <li>
+              <span class="lang-en"><code>turn = j</code> signals: "I politely offer the turn to process $j$."</span>
+              <span class="lang-ar"><code>turn = j</code> تنازل مهذب: "أمنح الدور للعملية الأخرى $j$ أولاً."</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Mathematical Proof:</strong> Satisfies all 3 requirements (Mutual Exclusion, Progress, and Bounded Waiting).</span>
+              <span class="lang-ar"><strong>مثبت رياضياً:</strong> يحقق الشروط الثلاثة كاملة.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>⚡</span>
+            <span class="lang-en">Hardware Instructions (test_and_set & CAS)</span>
+            <span class="lang-ar">تعليمات العتاد الذرية (test_and_set و CAS)</span>
+          </h4>
+          <p class="card-text lang-en">
+            Modern CPUs provide special <strong>atomic (non-interruptible)</strong> hardware instructions:
+          </p>
+          <p class="card-text lang-ar">
+            توفر المعالجات الحديثة تعليمات عتادية <strong>ذرية (لا تقبل المقاطعة أثناء تنفيذها)</strong>:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>test_and_set(&lock):</strong> Reads the old value of <code>lock</code> and atomically sets <code>lock = TRUE</code>, returning the original value.</span>
+              <span class="lang-ar"><strong>test_and_set:</strong> تقرأ القيمة القديمة للقفل وتضبطها على TRUE ذرياً وتعيد القيمة القديمة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>compare_and_swap(&lock, expected, new_value):</strong> Swaps value to <code>new_value</code> ONLY IF current value equals <code>expected</code>.</span>
+              <span class="lang-ar"><strong>compare_and_swap:</strong> تبدل القيمة فقط إذا كانت مطابقة للقيمة المتوقعة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Exam Caveat:</strong> Simple spinlocks using <code>test_and_set</code> or <code>compare_and_swap</code> satisfy Mutual Exclusion and Progress, but <strong>DO NOT satisfy Bounded Waiting</strong> unless an explicit waiting queue array is programmed!</span>
+              <span class="lang-ar"><strong>تنبيه امتحاني:</strong> الأقفال البسيطة بهذه التعليمات تحقق الاستبعاد والتقدم، لكنها <strong>لا تحقق الانتظار المحدود</strong> إلا بإضافة مصفوفة انتظار منظمة!</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: SEMAPHORES WITHOUT BUSY WAITING (MAJOR ESSAY TOPIC) -->
+    <section class="content-section" id="section3">
+      <div class="section-header">
+        <div class="section-number">3</div>
+        <h3 class="section-title lang-en">Semaphores: Eliminating Busy Waiting via Queues</h3>
+        <h3 class="section-title lang-ar">السيمافورات: حل مشكلة الانتظار العاطل عبر الطوابير (سؤال الـ 7 درجات)</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🔄</span>
+            <span class="lang-en">The Flaw of Spinlocks (Busy Waiting)</span>
+            <span class="lang-ar">عيب أقفال الدوران (الانتظار العاطل Busy Waiting)</span>
+          </h4>
+          <p class="card-text lang-en">
+            A basic semaphore or spinlock executes <code>while (S &lt;= 0) ;</code>, continuously looping on the CPU while waiting for the lock.
+          </p>
+          <p class="card-text lang-ar">
+            في السيمافور البسيط يدور المعالج في حلقة مفرغة <code>while (S &lt;= 0) ;</code> مستهلكاً طاقة المعالج دون جدوى أثناء الانتظار.
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en">Wastes enormous CPU cycles that other ready processes could use productively.</span>
+              <span class="lang-ar">يهدر دورات المعالج التي تحتاجها العمليات الأخرى الجاهزة.</span>
+            </li>
+            <li>
+              <span class="lang-en">Acceptable <em>only</em> if locks are held for extremely brief moments on multiprocessor systems (spinlocks).</span>
+              <span class="lang-ar">مقبول فقط إذا كان وقت الاحتجاز بالغة القصر على أنظمة متعددة المعالجات.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🛑</span>
+            <span class="lang-en">Implementation with NO Busy Waiting</span>
+            <span class="lang-ar">تطبيق السيمافور بدون انتظار عاطل (كود الامتحان النموذجي)</span>
+          </h4>
+          <p class="card-text lang-en">
+            Instead of looping, the process suspends itself using <code>block()</code>, and is later awakened using <code>wakeup()</code>:
+          </p>
+          <p class="card-text lang-ar">
+            بدلاً من الدوران، تضع العملية نفسها في طابور انتظار وتعلق تنفيذها بـ <code>block()</code>، وتوقظها عملية أخرى بـ <code>wakeup()</code>:
+          </p>
+          <div class="code-block">
+typedef struct {
+    int value;
+    struct process *list;
+} semaphore;
+
+void wait(semaphore *S) {
+    S->value--;
+    if (S->value < 0) {
+        // add this process to S->list;
+        block();
+    }
+}
+
+void signal(semaphore *S) {
+    S->value++;
+    if (S->value <= 0) {
+        // remove a process P from S->list;
+        wakeup(P);
+    }
+}
+          </div>
+        </div>
+      </div>
+
+      <!-- EXAM SPOTLIGHT CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Past Exam Spotlight: 7-Mark Essay Question</span>
+            <span class="callout-title lang-ar">سؤال امتحاني مقالي ضخم (7 درجات كاملة)</span>
+            <span class="exam-badge">Midterm 2019 Q4 & 2021 Q4</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Midterm 2019 Q4 (7 Marks):</strong> <em>"Show using a code how semaphores solve the critical section problem without busy waiting."</em><br>
+            <strong>Model Key Analysis:</strong><br>
+            • Define the semaphore struct containing <code>int value</code> and <code>struct process *list</code>.<br>
+            • In <code>wait()</code>: Decrement <code>S.value--</code>. If <code>S.value &lt; 0</code>, add invoking process to <code>S.list</code> and call <code>block()</code> (process enters Waiting state, CPU given to another process).<br>
+            • In <code>signal()</code>: Increment <code>S.value++</code>. If <code>S.value &lt;= 0</code>, remove process $P$ from <code>S.list</code> and call <code>wakeup(P)</code> (moves $P$ from Waiting state to Ready queue).<br>
+            <em>Notice: When S.value is negative, its magnitude $|S.value|$ equals the exact number of processes waiting on that semaphore queue!</em>
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>ميدتيرم 2019 سؤال 4 وميدتيرم 2021 سؤال 4:</strong> <em>"وضح باستخدام الكود كيف تحل السيمافورات معضلة القسم الحرج دون انتظار عاطل (without busy waiting)."</em><br>
+            <strong>تحليل الإجابة النموذجية المعتمدة:</strong><br>
+            • تعريف بنية السيمافور (struct) بحيث تحوي عداداً <code>value</code> وقائمة مؤشرات للعمليات المنتظرة <code>*list</code>.<br>
+            • دالة <code>wait()</code>: تنقص العداد <code>S.value--</code>، فإذا أصبح سالباً يُضاف المعرف للقائمة ويُستدعى <code>block()</code> لتعليق العملية وتحويلها لحالة الانتظار فوراً دون حرق وقت المعالج.<br>
+            • دالة <code>signal()</code>: تزيد العداد <code>S.value++</code>، فإذا ظل سالباً أو صفراً فهذا يعني وجود عمليات معلقة في القائمة، فيتم سحب عملية $P$ واستدعاء <code>wakeup(P)</code> لنقلها لطابور الجاهزية (Ready Queue).<br>
+            <em>ملاحظة امتحانية: القيمة المطلقة للعداد عندما يكون سالباً تمثل عدد العمليات المعلقة في طابور الانتظار بالضبط!</em>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: THE READERS-WRITERS PROBLEM (MIDTERM 2019 & 2022) -->
+    <section class="content-section" id="section4">
+      <div class="section-header">
+        <div class="section-number">4</div>
+        <h3 class="section-title lang-en">Classical Problems: The Readers-Writers Problem</h3>
+        <h3 class="section-title lang-ar">المسائل الكلاسيكية: مسألة القراء والكتّاب (سؤال امتحاني متكرر)</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>📖</span>
+            <span class="lang-en">Rules & Shared Variables</span>
+            <span class="lang-ar">القواعد والمتغيرات المشتركة</span>
+          </h4>
+          <p class="card-text lang-en">
+            A shared database or file accessed by concurrent readers and writers:
+          </p>
+          <p class="card-text lang-ar">
+            ملف أو قاعدة بيانات مشتركة تصل إليها عمليات قراءة وكتابة:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Readers:</strong> Only read data; multiple readers may access concurrently.</span>
+              <span class="lang-ar"><strong>القراء:</strong> يقرؤون فقط، ويُسمح لعدة قراء بالقراءة معاً في نفس اللحظة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Writers:</strong> Read and modify; requires <strong>exclusive mutual access</strong> (no other writer and no readers allowed).</span>
+              <span class="lang-ar"><strong>الكتّاب:</strong> يعدلون البيانات، ويشترط وجود كاتب واحد فقط بمفرده تماماً.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Shared Data:</strong><br>
+                <code>semaphore rw_mutex = 1;</code> (protects database for writers)<br>
+                <code>semaphore mutex = 1;</code> (protects updates to <code>read_count</code>)<br>
+                <code>int read_count = 0;</code> (tracks active readers)
+              </span>
+              <span class="lang-ar"><strong>المتغيرات المشتركة:</strong> سيمافور <code>rw_mutex = 1</code> لحجز الملف، سيمافور <code>mutex = 1</code> لحماية العداد، ومتغير <code>read_count = 0</code> لحساب القراء.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>✍️</span>
+            <span class="lang-en">Reader & Writer Implementation Code</span>
+            <span class="lang-ar">كود تنفيذ القارئ والكاتب</span>
+          </h4>
+          <div class="code-block">
+// Writer Process
+do {
+    wait(rw_mutex);
+    /* writing is performed */
+    signal(rw_mutex);
+} while (true);
+
+// Reader Process
+do {
+    wait(mutex);
+    read_count++;
+    if (read_count == 1)
+        wait(rw_mutex); // First reader locks out writers
+    signal(mutex);
+
+    /* reading is performed */
+
+    wait(mutex);
+    read_count--;
+    if (read_count == 0)
+        signal(rw_mutex); // Last reader frees writers
+    signal(mutex);
+} while (true);
+          </div>
+        </div>
+      </div>
+
+      <!-- EXAM TIP CALLOUT: MIDTERM 2022 DETAILED BREAKDOWN -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Midterm 2022 Question 5 Full Breakdown</span>
+            <span class="callout-title lang-ar">تحليل تفصيلي شامل لسؤال ميدتيرم 2022 (المسألة الخامسة)</span>
+            <span class="exam-badge">Midterm 2022 Q5</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Sub-question 1: Initialization</strong><br>
+            ➔ <code>readCount = 0; mutex = 1; writeBlock (rw_mutex) = 1;</code><br><br>
+            <strong>Sub-question 2: Suppose a writer is updating, and 3 new readers arrive. Where are they blocked?</strong><br>
+            ➔ <strong>Reader 1:</strong> Successfully acquires <code>mutex</code>, increments <code>readCount</code> to 1, and calls <code>wait(writeBlock)</code>. Since the writer holds <code>writeBlock</code>, <strong>Reader 1 blocks on the <code>writeBlock</code> semaphore queue</strong>.<br>
+            ➔ <strong>Reader 2 & Reader 3:</strong> Arrive while Reader 1 is blocked inside its entry section before calling <code>signal(mutex)</code>. Therefore, <strong>Reader 2 and Reader 3 block on the <code>mutex</code> semaphore queue</strong>!<br><br>
+            <strong>Sub-question 3: Suppose some readers are reading. What happens to a newly arrived writer?</strong><br>
+            ➔ The writer invokes <code>wait(writeBlock)</code>. Because the first reader previously acquired <code>writeBlock</code>, the writer finds <code>writeBlock == 0</code> and is <strong>blocked on the <code>writeBlock</code> semaphore queue</strong> until the last reader decrements <code>readCount</code> to 0 and invokes <code>signal(writeBlock)</code>.<br><br>
+            <strong>Sub-question 4: Are writers subject to starvation in this solution? Justify.</strong><br>
+            ➔ <strong>YES!</strong> In this first readers-writers solution, readers are prioritized. If new readers keep arriving while active readers are reading, <code>readCount</code> never drops to 0. Consequently, <code>signal(writeBlock)</code> is never called, causing the writer to starve indefinitely!
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>الفقرة 1: التهيئة الابتدائية</strong><br>
+            ➔ <code>readCount = 0; mutex = 1; writeBlock = 1;</code><br><br>
+            <strong>الفقرة 2: إذا كان الكاتب يكتب ووصل 3 قراء، أين تُحجز كل عملية؟</strong><br>
+            ➔ <strong>القارئ الأول:</strong> ينجح في تجاوز <code>wait(mutex)</code> ويزيد العداد لـ 1، ثم ينفذ <code>wait(writeBlock)</code>. وحيث أن الكاتب يحجز الملف، <strong>يُحجز القارئ الأول في طابور انتظار السيمافور <code>writeBlock</code></strong>.<br>
+            ➔ <strong>القارئ الثاني والثالث:</strong> يصادفان أن القارئ الأول معلق قبل أن ينفذ <code>signal(mutex)</code>، وبالتالي <strong>يُحجز القارئان 2 و 3 في طابور انتظار السيمافور <code>mutex</code></strong>!<br><br>
+            <strong>الفقرة 3: ماذا يحدث لكاتب وصل أثناء قراءة بعض القراء؟</strong><br>
+            ➔ يستدعي الكاتب <code>wait(writeBlock)</code> فيجد القيمة 0 (لأن القارئ الأول حجزها)، فيتم <strong>تعليق الكاتب في طابور <code>writeBlock</code></strong> حتى ينتهي آخر قارئ تماماً ويصفر العداد ويطلق الإشارة.<br><br>
+            <strong>الفقرة 4: هل يعاني الكتّاب من التجويع (Starvation)؟ ولماذا؟</strong><br>
+            ➔ <strong>نعم!</strong> لأن الأولوية للقراء؛ فإن استمر تدفق قراء جدد فلن يصل <code>readCount</code> للصفر أبداً، ولن يتم استدعاء <code>signal(writeBlock)</code>، مما يجعل الكاتب ينتظر لأجل غير مسمى.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: BOUNDED-BUFFER & DINING PHILOSOPHERS -->
+    <section class="content-section" id="section5">
+      <div class="section-header">
+        <div class="section-number">5</div>
+        <h3 class="section-title lang-en">The Bounded-Buffer & Dining Philosophers Problems</h3>
+        <h3 class="section-title lang-ar">مسألة المخزن المحدود وفلاسفة العشاء</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>📦</span>
+            <span class="lang-en">Bounded-Buffer with Semaphores</span>
+            <span class="lang-ar">المخزن المؤقت المحدود بالسيمافورات</span>
+          </h4>
+          <p class="card-text lang-en">
+            Pool of $n$ buffers, each holding one item:
+          </p>
+          <p class="card-text lang-ar">
+            مخزن يتسع لـ $n$ من العناصر، وتُدار بالسيمافورات الثلاثة التالية:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><code>semaphore mutex = 1;</code> (Mutual exclusion for buffer access)</span>
+              <span class="lang-ar"><code>mutex = 1</code> للاستبعاد المتبادل أثناء إضافة أو سحب عنصر.</span>
+            </li>
+            <li>
+              <span class="lang-en"><code>semaphore full = 0;</code> (Counts full buffer slots available for consumer)</span>
+              <span class="lang-ar"><code>full = 0</code> لحساب عدد الخانات الممتلئة المتاحة للمستهلك.</span>
+            </li>
+            <li>
+              <span class="lang-en"><code>semaphore empty = n;</code> (Counts empty buffer slots available for producer)</span>
+              <span class="lang-ar"><code>empty = n</code> لحساب عدد الخانات الفارغة المتاحة للمنتج.</span>
+            </li>
+          </ul>
+          <div class="code-block">
+// Producer
+do {
+    // produce item
+    wait(empty);
+    wait(mutex);
+    // add item to buffer
+    signal(mutex);
+    signal(full);
+} while (true);
+
+// Consumer
+do {
+    wait(full);
+    wait(mutex);
+    // remove item from buffer
+    signal(mutex);
+    signal(empty);
+    // consume item
+} while (true);
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🍽️</span>
+            <span class="lang-en">Dining-Philosophers & Deadlock</span>
+            <span class="lang-ar">مسألة الفلاسفة وتجنب الجمود (Deadlock)</span>
+          </h4>
+          <p class="card-text lang-en">
+            Five philosophers alternate between thinking and eating from a shared bowl, requiring two chopsticks ($i$ and $(i+1)\%5$):
+          </p>
+          <p class="card-text lang-ar">
+            5 فلاسفة يتناوبون بين التفكير وتناول الطعام، ويحتاج كل فيلسوف لعودين ($i$ و $(i+1)\%5$):
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Naive Solution:</strong> Each philosopher executes <code>wait(chopstick[i]); wait(chopstick[(i+1)%5]);</code></span>
+              <span class="lang-ar"><strong>الحل الساذج:</strong> كل فيلسوف يلتقط العود الأيمن ثم الأيسر.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Deadlock Hazard:</strong> If all 5 philosophers become hungry simultaneously and grab their right chopstick, all chopsticks become 0 and every philosopher blocks waiting for the left chopstick indefinitely (Deadlock!).</span>
+              <span class="lang-ar"><strong>خطر الجمود (Deadlock):</strong> إذا جاع الفلاسفة الخمسة معاً والتقط كل منهم عوده الأيمن، يحدث جمود متبادل ويتوقف الجميع للأبد!</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Remedies:</strong> Allow at most 4 philosophers at the table, pick up chopsticks only if both are available, or use asymmetric odd/even philosopher rules.</span>
+              <span class="lang-ar"><strong>الحلول:</strong> السماح لـ 4 فلاسفة كحد أقصى بالجلوس، أو اشتراط توفر العودين معاً قبل الالتقاط، أو التناوب غير المتماثل (فردي/زوجي).</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: KEY TERMS GLOSSARY -->
+    <section class="content-section" id="section6">
+      <div class="section-header">
+        <div class="section-number">6</div>
+        <h3 class="section-title lang-en">Chapter 5 Key Terms & Exam Glossary</h3>
+        <h3 class="section-title lang-ar">قاموس المصطلحات والمفاهيم الأساسية للفصل الخامس</h3>
+      </div>
+
+      <div class="glossary-grid">
+        <div class="term-card">
+          <div class="term-en">Race Condition</div>
+          <div class="term-ar">حالة التسابق (Race Condition)</div>
+          <p class="term-def lang-en">A concurrent execution anomaly where the final outcome depends on the nondeterministic execution order of accessing shared data.</p>
+          <p class="term-def lang-ar">خلل في التنفيذ المتزامن تتوقف فيه النتيجة النهائية على الترتيب العشوائي للوصول إلى البيانات المشتركة.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Critical Section</div>
+          <div class="term-ar">القسم الحرج (Critical Section)</div>
+          <p class="term-def lang-en">A code segment accessing shared resources that must be executed under mutual exclusion to maintain data consistency.</p>
+          <p class="term-def lang-ar">جزء من كود البرنامج يعدل موارد مشتركة ويجب تنفيذه تحت مظلة الاستبعاد المتبادل لمنع فساد البيانات.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Counting vs. Binary Semaphore</div>
+          <div class="term-ar">السيمافور العددي مقابل الثنائي</div>
+          <p class="term-def lang-en">Counting semaphores range over unrestricted domains; binary semaphores range only between 0 and 1 (acting as mutex locks).</p>
+          <p class="term-def lang-ar">السيمافور العددي يتخذ أي قيمة صحيحة لتمثيل الموارد المتاحة؛ بينما الثنائي قيمته 0 أو 1 فقط ويعمل كقفل متبادل.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Busy Waiting / Spinlock</div>
+          <div class="term-ar">الانتظار العاطل / قفل الدوران</div>
+          <p class="term-def lang-en">A mechanism where a process loops continuously on the CPU while waiting for a lock, wasting valuable processor cycles.</p>
+          <p class="term-def lang-ar">آلية يدور فيها المعالج في حلقة فارغة بانتظار فك القفل مما يهدر طاقة ووقت المعالج.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Deadlock</div>
+          <div class="term-ar">الجمود الميت (Deadlock)</div>
+          <p class="term-def lang-en">A situation where two or more processes wait indefinitely for an event that can be caused only by one of the waiting processes.</p>
+          <p class="term-def lang-ar">حالة تتوقف فيها عمليتان أو أكثر بانتظار حدث لا يمكن أن يسببه إلا إحدى العمليات المتوقفة نفسها.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Priority Inversion</div>
+          <div class="term-ar">انعكاس الأولوية (Priority Inversion)</div>
+          <p class="term-def lang-en">A scheduling anomaly where a higher-priority process is blocked waiting for a lock held by a lower-priority process (solved via Priority Inheritance).</p>
+          <p class="term-def lang-ar">خلل في الجدولة تتعطل فيه عملية عالية الأولوية لانتظارها قفلاً تحتجزه عملية منخفضة الأولوية.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 7: INTERACTIVE CHAPTER QUIZ -->
+    <section class="quiz-section" id="quiz">
+      <div class="quiz-header">
+        <h3 class="quiz-title lang-en">Interactive Knowledge Check</h3>
+        <h3 class="quiz-title lang-ar">اختبار تقييم المعرفة التفاعلي للفصل الخامس</h3>
+        <p class="quiz-subtitle lang-en">5 High-Yield MCQs curated directly from Cairo University Past Midterms & Quizzes</p>
+        <p class="quiz-subtitle lang-ar">5 أسئلة اختيار من متعدد مستخلصة مباشرة من امتحانات الميدتيرم السابقة</p>
+      </div>
+
+      <form id="quizForm">
+
+        <!-- QUESTION 1 -->
+        <div class="question-block" data-question="1">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 1 of 5</span>
+            <span class="question-badge lang-ar">السؤال 1 من 5</span>
+            <span class="question-exam-tag">Midterm 2019 Q1.10</span>
+          </div>
+          <p class="question-text lang-en">
+            Which statement accurately reflects the requirements for any valid solution to the <strong>Critical-Section Problem</strong>?
+          </p>
+          <p class="question-text lang-ar">
+            أي عبارة تصف بدقة الشروط اللازمة لأي حل مقبول لـ <strong>معضلة القسم الحرج (Critical-Section Problem)</strong>؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q1" value="A">
+              <span class="lang-en">A) The solution must satisfy at least one of the three requirements</span>
+              <span class="lang-ar">أ) يجب أن يحقق الحل شرطاً واحداً على الأقل من الشروط الثلاثة</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q1" value="B">
+              <span class="lang-en">B) The solution must satisfy all three requirements: Mutual Exclusion, Progress, and Bounded Waiting</span>
+              <span class="lang-ar">ب) يجب أن يحقق الحل الشروط الثلاثة معاً: الاستبعاد المتبادل، والتقدم، والانتظار المحدود</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q1" value="C">
+              <span class="lang-en">C) Mutual exclusion alone is completely sufficient for any multiprocessor system</span>
+              <span class="lang-ar">ج) الاستبعاد المتبادل وحده كافٍ تماماً لأي نظام متعدد المعالجات</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q1" value="D">
+              <span class="lang-en">D) Progress is only required when hardware interrupts are disabled</span>
+              <span class="lang-ar">د) شرط التقدم مطلوب فقط عند تعطيل المقاطعات العتادية</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-1"></div>
+        </div>
+
+        <!-- QUESTION 2 -->
+        <div class="question-block" data-question="2">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 2 of 5</span>
+            <span class="question-badge lang-ar">السؤال 2 من 5</span>
+            <span class="question-exam-tag">Midterm 2019 Q4 & 2021 Q4</span>
+          </div>
+          <p class="question-text lang-en">
+            How does the non-busy-waiting implementation of a <strong>Semaphore</strong> prevent processes from wasting CPU cycles in tight loops?
+          </p>
+          <p class="question-text lang-ar">
+            كيف يمنع تطبيق <strong>السيمافور</strong> بدون انتظار عاطل العمليات من إهدار دورات المعالج في حلقات دوران مفرغة؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q2" value="A">
+              <span class="lang-en">A) By dynamically switching the CPU architecture to emulation mode</span>
+              <span class="lang-ar">أ) عبر التحويل الديناميكي لمعمارية المعالج لوضع المحاكاة البرمجية</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q2" value="B">
+              <span class="lang-en">B) By using a waiting queue where an invoking process that cannot enter is suspended via block(), and later resumed via wakeup()</span>
+              <span class="lang-ar">ب) عبر استخدام طابور انتظار؛ فإذا تعذر الدخول تُعلق العملية وتُنقل لحالة الانتظار بـ block()، وتستأنف لاحقاً بـ wakeup()</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q2" value="C">
+              <span class="lang-en">C) By terminating any process that requests a locked semaphore</span>
+              <span class="lang-ar">ج) عبر إنهاء وقتل أي عملية تطلب سيمافوراً مشغولاً على الفور</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q2" value="D">
+              <span class="lang-en">D) By permanently setting the mode bit to 1</span>
+              <span class="lang-ar">د) عبر التثبيت الدائم لبت الوضع (Mode bit) على 1</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-2"></div>
+        </div>
+
+        <!-- QUESTION 3 -->
+        <div class="question-block" data-question="3">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 3 of 5</span>
+            <span class="question-badge lang-ar">السؤال 3 من 5</span>
+            <span class="question-exam-tag">Midterm 2022 Q5.4</span>
+          </div>
+          <p class="question-text lang-en">
+            In the standard first solution to the <strong>Readers-Writers Problem</strong> (reader-preference), why are writer processes subject to <strong>Starvation</strong>?
+          </p>
+          <p class="question-text lang-ar">
+            في الحل القياسي الأول لـ <strong>مسألة القراء والكتّاب</strong> (أولوية القارئ)، لماذا يتعرض الكتّاب لـ <strong>التجويع (Starvation)</strong>؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q3" value="A">
+              <span class="lang-en">A) Because writers execute in user mode while readers execute in kernel mode</span>
+              <span class="lang-ar">أ) لأن الكتّاب ينفذون في وضع المستخدم بينما ينفذ القراء في وضع النواة</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q3" value="B">
+              <span class="lang-en">B) Because as long as at least one reader is active, subsequent arriving readers continue entering without waiting, so read_count never reaches zero</span>
+              <span class="lang-ar">ب) لأنه طالما يوجد قارئ واحد يقرأ، يدخل القراء الجدد تباعاً دون انتظار، فلا يصل read_count للصفر أبداً ولا يُحرر القفل للكاتب</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q3" value="C">
+              <span class="lang-en">C) Because writers are stored permanently in ROM firmware</span>
+              <span class="lang-ar">ج) لأن كود الكتّاب مخزن بشكل دائم في ذاكرة ROM</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q3" value="D">
+              <span class="lang-en">D) Because the operating system disables the CPU scheduler during file writes</span>
+              <span class="lang-ar">د) لأن نظام التشغيل يعطل مجدول المعالج كلياً أثناء عمليات الكتابة</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-3"></div>
+        </div>
+
+        <!-- QUESTION 4 -->
+        <div class="question-block" data-question="4">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 4 of 5</span>
+            <span class="question-badge lang-ar">السؤال 4 من 5</span>
+            <span class="question-exam-tag">Midterm Exam Standard</span>
+          </div>
+          <p class="question-text lang-en">
+            In the semaphore solution to the <strong>Bounded-Buffer Problem</strong> with a pool of $n$ buffers, what are the correct initial values of the semaphores <code>mutex</code>, <code>full</code>, and <code>empty</code>?
+          </p>
+          <p class="question-text lang-ar">
+            في حل السيمافور لـ <strong>مسألة المخزن المؤقت المحدود (Bounded-Buffer)</strong> بسعة $n$ من الخانات، ما هي القيم الابتدائية الصحيحة للسيمافورات <code>mutex</code> و <code>full</code> و <code>empty</code>؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q4" value="A">
+              <span class="lang-en">A) mutex = 0, full = n, empty = 1</span>
+              <span class="lang-ar">أ) mutex = 0, full = n, empty = 1</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q4" value="B">
+              <span class="lang-en">B) mutex = 1, full = 0, empty = n</span>
+              <span class="lang-ar">ب) mutex = 1, full = 0, empty = n</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q4" value="C">
+              <span class="lang-en">C) mutex = n, full = 1, empty = 0</span>
+              <span class="lang-ar">ج) mutex = n, full = 1, empty = 0</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q4" value="D">
+              <span class="lang-en">D) mutex = 1, full = n, empty = n</span>
+              <span class="lang-ar">د) mutex = 1, full = n, empty = n</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-4"></div>
+        </div>
+
+        <!-- QUESTION 5 -->
+        <div class="question-block" data-question="5">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 5 of 5</span>
+            <span class="question-badge lang-ar">السؤال 5 من 5</span>
+            <span class="question-exam-tag">Midterm 2022 Q5.2</span>
+          </div>
+          <p class="question-text lang-en">
+            In the Readers-Writers problem, if a writer is currently updating the file and 3 reader processes arrive, where do <strong>Reader 2 and Reader 3</strong> get blocked?
+          </p>
+          <p class="question-text lang-ar">
+            في مسألة القراء والكتّاب، إذا كان الكاتب يُحدث الملف حالياً ووصل 3 قراء معاً، في أي طابور انتظار يُحجز <strong>القارئ الثاني والقارئ الثالث</strong>؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q5" value="A">
+              <span class="lang-en">A) They both enter the file immediately and read concurrently with the writer</span>
+              <span class="lang-ar">أ) يدخل كلاهما الملف فوراً ويقرآن بالتوازي مع الكاتب</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q5" value="B">
+              <span class="lang-en">B) They get blocked on the mutex semaphore queue because Reader 1 is blocked on rw_mutex before signaling mutex</span>
+              <span class="lang-ar">ب) يُحجزان في طابور انتظار السيمافور mutex لأن القارئ الأول معلق عند rw_mutex قبل إطلاق إشارة mutex</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q5" value="C">
+              <span class="lang-en">C) They are terminated by the short-term CPU scheduler</span>
+              <span class="lang-ar">ج) يتم إنهاؤهما وإلغاؤهما من قِبل مجدول المعالج</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q5" value="D">
+              <span class="lang-en">D) They block on the DMA controller buffer</span>
+              <span class="lang-ar">د) يُحجزان في مخزن وحدة التحكم DMA</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-5"></div>
+        </div>
+
+        <!-- Actions -->
+        <div class="quiz-actions">
+          <button type="button" id="submitQuizBtn" class="btn-quiz-submit">
+            <span class="lang-en">Submit Quiz</span>
+            <span class="lang-ar">تسليم الإجابات</span>
+          </button>
+          <button type="button" id="resetQuizBtn" class="btn-quiz-reset">
+            <span class="lang-en">Reset</span>
+            <span class="lang-ar">إعادة الاختبار</span>
+          </button>
+        </div>
+
+      </form>
+
+      <!-- Score Summary Box -->
+      <div id="scoreBox" class="score-summary-box">
+        <div class="score-circle">
+          <span class="score-number" id="scoreNum">0/5</span>
+          <span class="score-percent" id="scorePercent">0%</span>
+        </div>
+        <h4 class="score-status" id="scoreGrade">Excellent!</h4>
+        <p class="score-message" id="scoreFeedback">Detailed evaluation feedback appears here.</p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Page Footer -->
+  <footer class="page-footer">
+    <p class="lang-en">
+      OS MasterStudy &copy; 2026 &bull; Based on Silberschatz Operating System Concepts (9th Ed) & Dr. Khaled Wassif's Lectures & Exams.
+    </p>
+    <p class="lang-ar">
+      دليل أنظمة التشغيل الشامل &copy; 2026 &bull; مستند إلى كتاب سلبرشاتز (Silberschatz 9th Ed) ومحاضرات وامتحانات د. خالد وصيف (كلية الحاسبات والذكاء الاصطناعي).
+    </p>
+  </footer>
+
+  <!-- Interactive JavaScript Engine -->
+  <script>
+    (function() {
+      const QUIZ_DATA = {
+        q1: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> A valid solution to the critical-section problem cannot satisfy just "at least one" requirement; it MUST satisfy all three requirements: Mutual Exclusion, Progress, and Bounded Waiting! (Midterm 2019 Q1.10 T/F was False for stating at least one).',
+          expAr: '<strong>صحيح (ب):</strong> يجب أن يحقق أي حل لمعضلة القسم الحرج الشروط الثلاثة مجتمعة (الاستبعاد المتبادل، التقدم، والانتظار المحدود) معاً. سؤال صح وخطأ ميدتيرم 2019 كان خاطئاً لادعائه الاكتفاء بشرط واحد.'
+        },
+        q2: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> In semaphores without busy waiting, when a process calls wait() and finds the semaphore value < 0, it calls block() to suspend itself in a waiting queue. When another process signals, it calls wakeup() to move a waiting process back to the ready queue. (Midterm 2019 Q4 & 2021 Q4 - 7 Marks).',
+          expAr: '<strong>صحيح (ب):</strong> السيمافور بدون انتظار عاطل يعتمد على طابور انتظار؛ فإن كان العداد سالباً تُعلق العملية فوراً بـ block()، وعند زيادة العداد تستيقظ عملية معلقة بـ wakeup() لتدخل طابور الجاهزية دون إهدار وقت المعالج (سؤال 7 درجات في ميدتيرم 2019 و 2021).'
+        },
+        q3: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> In the first readers-writers problem, subsequent arriving readers continue entering the critical section without waiting on rw_mutex as long as read_count >= 1. If readers arrive continuously, read_count never drops to 0 and the writer starves indefinitely. (Midterm 2022 Q5.4).',
+          expAr: '<strong>صحيح (ب):</strong> في مسألة القراء الأولى، لا ينتظر أي قارئ جديد طالما أن هناك قارئاً نشطاً بالفعل (read_count >= 1). فإن استمر توافد القراء لا يصل العداد للصفر أبداً ويتعرض الكاتب للتجويع Starvation (ميدتيرم 2022 سؤال 5.4).'
+        },
+        q4: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> In the bounded-buffer problem: mutex is initialized to 1 (binary lock for buffer access), full is initialized to 0 (no items in the buffer yet), and empty is initialized to n (all n slots are initially free for the producer).',
+          expAr: '<strong>صحيح (ب):</strong> في المخزن المؤقت المحدود: يُهيأ mutex بـ 1 لحماية المخزن، و full بـ 0 لعدم وجود عناصر بعد، و empty بـ n لأن جميع الخانات فارغة ومتاحة للمنتج في البداية.'
+        },
+        q5: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> Reader 1 acquires mutex, increments read_count to 1, and blocks on wait(rw_mutex) because the writer is active. Because Reader 1 is blocked BEFORE executing signal(mutex), newly arrived Reader 2 and Reader 3 block on wait(mutex)! (Midterm 2022 Q5.2 exact question).',
+          expAr: '<strong>صحيح (ب):</strong> يتجاوز القارئ الأول mutex ثم يتعطل عند rw_mutex بسبب الكاتب. ولأن القارئ الأول معلق قبل أن يستدعي signal(mutex)، فإن القارئين 2 و 3 يتعطلان فوراً عند wait(mutex)! (سؤال امتحان ميدتيرم 2022 بالتفصيل).'
+        }
+      };
+
+      let currentLang = localStorage.getItem('os_guide_lang') || 'en';
+      let currentTheme = localStorage.getItem('os_guide_theme') || 'dark';
+
+      const themeToggleBtn = document.getElementById('themeToggle');
+      const langToggleBtn = document.getElementById('langToggle');
+      const themeIcon = document.getElementById('themeIcon');
+      const submitQuizBtn = document.getElementById('submitQuizBtn');
+      const resetQuizBtn = document.getElementById('resetQuizBtn');
+      const scoreBox = document.getElementById('scoreBox');
+
+      function applyTheme(theme) {
+        currentTheme = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('os_guide_theme', theme);
+        if (theme === 'light') {
+          themeIcon.textContent = '🌙';
+          document.getElementById('themeTextEn').textContent = 'Dark';
+          document.getElementById('themeTextAr').textContent = 'ليلي';
+        } else {
+          themeIcon.textContent = '☀️';
+          document.getElementById('themeTextEn').textContent = 'Light';
+          document.getElementById('themeTextAr').textContent = 'نهاري';
+        }
+      }
+
+      function applyLanguage(lang) {
+        currentLang = lang;
+        document.body.setAttribute('data-lang', lang);
+        document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+        document.documentElement.setAttribute('lang', lang);
+        localStorage.setItem('os_guide_lang', lang);
+
+        Object.keys(QUIZ_DATA).forEach((key, index) => {
+          const expDiv = document.getElementById(`exp-${index + 1}`);
+          if (expDiv && expDiv.classList.contains('show')) {
+            expDiv.innerHTML = lang === 'ar' ? QUIZ_DATA[key].expAr : QUIZ_DATA[key].expEn;
+          }
+        });
+      }
+
+      themeToggleBtn.addEventListener('click', () => {
+        applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+      });
+
+      langToggleBtn.addEventListener('click', () => {
+        applyLanguage(currentLang === 'en' ? 'ar' : 'en');
+      });
+
+      submitQuizBtn.addEventListener('click', () => {
+        let score = 0;
+        const total = Object.keys(QUIZ_DATA).length;
+
+        Object.keys(QUIZ_DATA).forEach((key, index) => {
+          const qIndex = index + 1;
+          const qBlock = document.querySelector(`.question-block[data-question="${qIndex}"]`);
+          const selectedOption = document.querySelector(`input[name="${key}"]:checked`);
+          const expDiv = document.getElementById(`exp-${qIndex}`);
+          const optionLabels = qBlock.querySelectorAll('.option-label');
+
+          optionLabels.forEach(label => {
+            label.classList.remove('is-correct', 'is-wrong');
+          });
+          qBlock.classList.remove('correct-highlight', 'incorrect-highlight');
+
+          const correctVal = QUIZ_DATA[key].correct;
+
+          if (selectedOption) {
+            const userVal = selectedOption.value;
+            if (userVal === correctVal) {
+              score++;
+              qBlock.classList.add('correct-highlight');
+              selectedOption.closest('.option-label').classList.add('is-correct');
+            } else {
+              qBlock.classList.add('incorrect-highlight');
+              selectedOption.closest('.option-label').classList.add('is-wrong');
+              const correctLabel = qBlock.querySelector(`.option-label[data-opt="${correctVal}"]`);
+              if (correctLabel) correctLabel.classList.add('is-correct');
+            }
+          } else {
+            qBlock.classList.add('incorrect-highlight');
+            const correctLabel = qBlock.querySelector(`.option-label[data-opt="${correctVal}"]`);
+            if (correctLabel) correctLabel.classList.add('is-correct');
+          }
+
+          expDiv.className = 'question-explanation show explanation-correct';
+          expDiv.innerHTML = currentLang === 'ar' ? QUIZ_DATA[key].expAr : QUIZ_DATA[key].expEn;
+        });
+
+        const percentage = Math.round((score / total) * 100);
+        document.getElementById('scoreNum').textContent = `${score}/${total}`;
+        document.getElementById('scorePercent').textContent = `${percentage}%`;
+
+        const gradeElem = document.getElementById('scoreGrade');
+        const feedbackElem = document.getElementById('scoreFeedback');
+
+        if (score === 5) {
+          gradeElem.textContent = currentLang === 'ar' ? 'ممتاز وأسطوري! (100%)' : 'Outstanding Master Level! (100%)';
+          gradeElem.style.color = 'var(--accent-emerald)';
+          feedbackElem.textContent = currentLang === 'ar' 
+            ? 'علامة كاملة! لقد أتقنت أعقد مفاهيم التزامن وأصعب أسئلة الميدتيرم ذات الـ 7 درجات بنجاح منقطع النظير.'
+            : 'Flawless performance! You have mastered the most mathematically rigorous and highest-weight exam topics in the entire course.';
+        } else if (score >= 3) {
+          gradeElem.textContent = currentLang === 'ar' ? 'أداء ممتاز وقوي!' : 'Good Job! Strong Understanding';
+          gradeElem.style.color = 'var(--accent-cyan)';
+          feedbackElem.textContent = currentLang === 'ar'
+            ? 'مستوى رائع جداً. راجع التعليلات الموضحة أسفل المسائل التي أخطأت بها خاصة تفاصيل مسألة القراء والكتّاب وطابور الانتظار للسيمافور.'
+            : 'Strong performance! Review the detailed explanations on the questions you missed (especially Readers-Writers blocking order and semaphore queues).';
+        } else {
+          gradeElem.textContent = currentLang === 'ar' ? 'يحتاج إلى مراجعة' : 'Needs Review & Practice';
+          gradeElem.style.color = 'var(--accent-rose)';
+          feedbackElem.textContent = currentLang === 'ar'
+            ? 'يوصى بقراءة صندوق تحليل سؤال ميدتيرم 2022 وكود السيمافور بدون انتظار عاطل بالأعلى بعناية ثم إعادة المحاولة.'
+            : 'We recommend reading through the Midterm 2022 breakdown box and the non-busy-waiting semaphore code above carefully, then retrying.';
+        }
+
+        scoreBox.classList.add('show');
+        scoreBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+
+      resetQuizBtn.addEventListener('click', () => {
+        document.getElementById('quizForm').reset();
+        document.querySelectorAll('.question-block').forEach(b => {
+          b.classList.remove('correct-highlight', 'incorrect-highlight');
+        });
+        document.querySelectorAll('.option-label').forEach(l => {
+          l.classList.remove('is-correct', 'is-wrong');
+        });
+        document.querySelectorAll('.question-explanation').forEach(e => {
+          e.classList.remove('show');
+          e.innerHTML = '';
+        });
+        scoreBox.classList.remove('show');
+      });
+
+      applyTheme(currentTheme);
+      applyLanguage(currentLang);
+    })();
+  </script>
+</body>
+</html>

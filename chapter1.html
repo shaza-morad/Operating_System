@@ -1,0 +1,2117 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chapter 1: Introduction to Operating Systems | OS MasterStudy</title>
+  <style>
+    :root {
+      --font-en: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      --font-ar: 'Segoe UI', Tahoma, 'Cairo', 'Tajawal', sans-serif;
+      --transition-speed: 0.3s;
+      
+      /* Dark Theme (Default) */
+      --bg-body: #0b0f19;
+      --bg-surface: #111827;
+      --bg-card: #1f2937;
+      --bg-card-hover: #283548;
+      --bg-glass: rgba(17, 24, 39, 0.88);
+      --border-color: #374151;
+      --border-focus: #6366f1;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-primary: #6366f1;
+      --accent-primary-hover: #4f46e5;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --callout-tip-bg: rgba(245, 158, 11, 0.1);
+      --callout-tip-border: #f59e0b;
+      --callout-hard-bg: rgba(99, 102, 241, 0.1);
+      --callout-hard-border: #6366f1;
+      --table-header-bg: #1e293b;
+      --table-zebra-bg: #182234;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="light"] {
+      --bg-body: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --bg-glass: rgba(255, 255, 255, 0.92);
+      --border-color: #e2e8f0;
+      --border-focus: #4f46e5;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --accent-primary: #4f46e5;
+      --accent-primary-hover: #4338ca;
+      --accent-cyan: #0284c7;
+      --accent-emerald: #059669;
+      --accent-amber: #d97706;
+      --accent-rose: #e11d48;
+      --callout-tip-bg: #fffbeb;
+      --callout-tip-border: #d97706;
+      --callout-hard-bg: #eef2ff;
+      --callout-hard-border: #4f46e5;
+      --table-header-bg: #f1f5f9;
+      --table-zebra-bg: #f8fafc;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Reset & Base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-en);
+      background-color: var(--bg-body);
+      color: var(--text-primary);
+      line-height: 1.65;
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+      overflow-x: hidden;
+    }
+
+    /* Bilingual display rules */
+    [data-lang="en"] .lang-ar {
+      display: none !important;
+    }
+    [data-lang="ar"] .lang-en {
+      display: none !important;
+    }
+    [data-lang="ar"] body, 
+    html[dir="rtl"] {
+      font-family: var(--font-ar);
+    }
+
+    /* Sticky Navigation Header */
+    .header-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: var(--bg-glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 800;
+      font-size: 1.15rem;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    }
+
+    .logo-text h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .logo-text span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Navigation Links */
+    .chapter-links {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      list-style: none;
+    }
+
+    .chapter-link {
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+      transition: all var(--transition-speed);
+    }
+
+    .chapter-link:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-color: var(--border-color);
+    }
+
+    .chapter-link.active {
+      background: var(--accent-primary);
+      color: white;
+      box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
+    }
+
+    /* Control Controls (Toggles) */
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .btn-toggle {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all var(--transition-speed);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-toggle:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-primary);
+      transform: translateY(-1px);
+    }
+
+    /* Main Container */
+    .main-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* Hero Banner */
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(6, 182, 212, 0.08));
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 2.25rem 2rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-banner::after {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, var(--accent-primary) 0%, transparent 70%);
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: var(--accent-primary);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero-title {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+      line-height: 1.25;
+      color: var(--text-primary);
+    }
+
+    .hero-desc {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      max-width: 900px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 0.85rem 1.25rem;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    /* Section Styles */
+    .content-section {
+      margin-bottom: 3rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .section-number {
+      background: var(--accent-primary);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* Cards & Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.4rem;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-speed);
+    }
+
+    .info-card:hover {
+      border-color: var(--accent-primary);
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-text {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .card-list {
+      margin-top: 0.75rem;
+      padding-left: 1.25rem;
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+    }
+
+    [dir="rtl"] .card-list {
+      padding-left: 0;
+      padding-right: 1.25rem;
+    }
+
+    .card-list li {
+      margin-bottom: 0.4rem;
+    }
+
+    /* Callout Boxes */
+    .callout {
+      border-radius: 10px;
+      padding: 1.25rem 1.4rem;
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      border-left: 4px solid transparent;
+    }
+
+    [dir="rtl"] .callout {
+      border-left: none;
+      border-right: 4px solid transparent;
+    }
+
+    .callout-exam {
+      background: var(--callout-tip-bg);
+      border-color: var(--callout-tip-border);
+    }
+
+    .callout-hard {
+      background: var(--callout-hard-bg);
+      border-color: var(--callout-hard-border);
+    }
+
+    .callout-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .callout-content {
+      flex: 1;
+    }
+
+    .callout-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .callout-title {
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .callout-exam .callout-title {
+      color: var(--accent-amber);
+    }
+
+    .callout-hard .callout-title {
+      color: var(--accent-primary);
+    }
+
+    .exam-badge {
+      background: var(--accent-amber);
+      color: #000;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .callout-body {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Comparison Table */
+    .table-responsive {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.92rem;
+    }
+
+    [dir="rtl"] .compare-table {
+      text-align: right;
+    }
+
+    .compare-table th {
+      background: var(--table-header-bg);
+      color: var(--text-primary);
+      padding: 0.85rem 1rem;
+      font-weight: 700;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .compare-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    .compare-table tr:nth-child(even) td {
+      background: var(--table-zebra-bg);
+    }
+
+    .compare-table tr:hover td {
+      background: var(--bg-card-hover);
+    }
+
+    /* Step-by-Step Flow */
+    .steps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      margin: 1.25rem 0;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+    }
+
+    .step-num {
+      background: var(--accent-cyan);
+      color: #000;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .step-text h4 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.2rem;
+    }
+
+    .step-text p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    /* Key Terms Glossary Grid */
+    .glossary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .term-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      transition: all var(--transition-speed);
+    }
+
+    .term-card:hover {
+      border-color: var(--accent-emerald);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .term-en {
+      font-weight: 700;
+      color: var(--accent-emerald);
+      font-size: 1rem;
+      margin-bottom: 0.15rem;
+    }
+
+    .term-ar {
+      font-weight: 700;
+      color: var(--accent-cyan);
+      font-size: 0.95rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .term-def {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+    }
+
+    /* Interactive Quiz Section */
+    .quiz-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 2.25rem 2rem;
+      margin-top: 3.5rem;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .quiz-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .quiz-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+    }
+
+    .quiz-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .question-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: border-color var(--transition-speed);
+    }
+
+    .question-block.correct-highlight {
+      border-color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .question-block.incorrect-highlight {
+      border-color: var(--accent-rose);
+      background: rgba(244, 63, 94, 0.05);
+    }
+
+    .question-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .question-badge {
+      background: var(--table-header-bg);
+      color: var(--accent-cyan);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    .question-exam-tag {
+      font-size: 0.75rem;
+      color: var(--accent-amber);
+      font-weight: 600;
+    }
+
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      line-height: 1.4;
+    }
+
+    .options-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .option-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.92rem;
+      transition: all var(--transition-speed);
+    }
+
+    .option-label:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+      border-color: var(--border-focus);
+    }
+
+    .option-label input[type="radio"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border-color);
+      border-radius: 50%;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .option-label input[type="radio"]:checked {
+      border-color: var(--accent-primary);
+      background-color: var(--accent-primary);
+      box-shadow: inset 0 0 0 3px var(--bg-surface);
+    }
+
+    .option-label.is-correct {
+      border-color: var(--accent-emerald) !important;
+      background: rgba(16, 185, 129, 0.15) !important;
+      color: var(--accent-emerald) !important;
+      font-weight: 700;
+    }
+
+    .option-label.is-wrong {
+      border-color: var(--accent-rose) !important;
+      background: rgba(244, 63, 94, 0.15) !important;
+      color: var(--accent-rose) !important;
+    }
+
+    .question-explanation {
+      margin-top: 1rem;
+      padding: 0.85rem 1.1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      display: none;
+    }
+
+    .question-explanation.show {
+      display: block;
+    }
+
+    .explanation-correct {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--accent-emerald);
+      color: var(--text-primary);
+    }
+
+    .quiz-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 2rem;
+    }
+
+    .btn-quiz-submit {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      color: white;
+      border: none;
+      padding: 0.85rem 2.2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .btn-quiz-submit:hover {
+      opacity: 0.92;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.45);
+    }
+
+    .btn-quiz-reset {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 0.85rem 1.8rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+    }
+
+    .btn-quiz-reset:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    /* Score Summary Box */
+    .score-summary-box {
+      margin-top: 2rem;
+      padding: 2rem;
+      border-radius: 12px;
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      text-align: center;
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .score-summary-box.show {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .score-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--table-header-bg);
+      border: 4px solid var(--accent-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+    }
+
+    .score-number {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      line-height: 1;
+    }
+
+    .score-percent {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .score-status {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .score-message {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Footer */
+    .page-footer {
+      border-top: 1px solid var(--border-color);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      background: var(--bg-surface);
+    }
+
+    /* Responsive */
+    @media (max-width: 868px) {
+      .nav-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .chapter-links {
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+      }
+      .hero-title {
+        font-size: 1.6rem;
+      }
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body data-lang="en">
+
+  <!-- Sticky Top Header & Navigation -->
+  <header class="header-nav">
+    <div class="nav-container">
+      <a href="chapter1.html" class="logo-area">
+        <div class="logo-icon">OS</div>
+        <div class="logo-text">
+          <h1 class="lang-en">OS MasterStudy</h1>
+          <h1 class="lang-ar">دليل أنظمة التشغيل</h1>
+          <span class="lang-en">BCS241 Course Guide</span>
+          <span class="lang-ar">مقرر BCS241 - م/د. خالد وصيف</span>
+        </div>
+      </a>
+
+      <!-- Chapter Switcher Links -->
+      <nav>
+        <ul class="chapter-links">
+          <li><a href="chapter1.html" class="chapter-link active">Ch 1: Intro</a></li>
+          <li><a href="chapter2.html" class="chapter-link">Ch 2: Structure</a></li>
+          <li><a href="chapter3.html" class="chapter-link">Ch 3: Processes</a></li>
+          <li><a href="chapter5.html" class="chapter-link">Ch 5: Sync</a></li>
+          <li><a href="chapter6.html" class="chapter-link">Ch 6: Sched</a></li>
+        </ul>
+      </nav>
+
+      <!-- Language & Theme Controls -->
+      <div class="nav-controls">
+        <button id="themeToggle" class="btn-toggle" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+          <span id="themeIcon">☀️</span>
+          <span class="lang-en" id="themeTextEn">Light</span>
+          <span class="lang-ar" id="themeTextAr">نهاري</span>
+        </button>
+        <button id="langToggle" class="btn-toggle" title="Toggle English/Arabic" aria-label="Toggle Language">
+          <span>🌐</span>
+          <span class="lang-en">العربية</span>
+          <span class="lang-ar">English</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-container">
+
+    <!-- Hero Header Banner -->
+    <header class="hero-banner">
+      <span class="hero-badge lang-en">Chapter 1 Study Guide</span>
+      <span class="hero-badge lang-ar">دليل دراسة الفصل الأول</span>
+
+      <h2 class="hero-title lang-en">Introduction to Operating Systems</h2>
+      <h2 class="hero-title lang-ar">مقدمة في أنظمة التشغيل</h2>
+
+      <p class="hero-desc lang-en">
+        Explore the foundational architecture of modern computer systems: the role of the operating system, the interrupt-driven execution model, dual-mode protection, storage hierarchies, multiprocessor organizations, and foundational computing environments.
+      </p>
+      <p class="hero-desc lang-ar">
+        استكشف البنية الأساسية لأنظمة الحاسوب الحديثة: دور نظام التشغيل، نموذج التشغيل القائم على المقاطعات، الحماية بالوضع المزدوج، تدرج وسائط التخزين، بنيات المعالجات المتعددة، وبيئات الحوسبة المعاصرة.
+      </p>
+
+      <div class="hero-stats">
+        <div class="stat-card">
+          <span class="stat-value">58 Slides</span>
+          <span class="stat-label lang-en">Lecture Material</span>
+          <span class="stat-label lang-ar">محتوى المحاضرة</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" style="color: var(--accent-amber);">High Yield</span>
+          <span class="stat-label lang-en">Exam Frequency</span>
+          <span class="stat-label lang-ar">الوزن في الامتحانات</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" style="color: var(--accent-emerald);">4 Past Midterms</span>
+          <span class="stat-label lang-en">Questions Integrated</span>
+          <span class="stat-label lang-ar">أسئلة مدمجة</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">5 MCQs</span>
+          <span class="stat-label lang-en">Interactive Quiz</span>
+          <span class="stat-label lang-ar">اختبار تفاعلي</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- SECTION 1: WHAT OPERATING SYSTEMS DO -->
+    <section class="content-section" id="section1">
+      <div class="section-header">
+        <div class="section-number">1</div>
+        <h3 class="section-title lang-en">What Operating Systems Do & Core Definitions</h3>
+        <h3 class="section-title lang-ar">ماذا تفعل أنظمة التشغيل والتعريفات الجوهرية</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>💻</span>
+            <span class="lang-en">Definition & Dual Views</span>
+            <span class="lang-ar">التعريف والمنظوران الأساسيان</span>
+          </h4>
+          <p class="card-text lang-en">
+            An <strong>Operating System (OS)</strong> is a program that acts as an intermediary between a user of a computer and the computer hardware.
+          </p>
+          <p class="card-text lang-ar">
+            <strong>نظام التشغيل (OS)</strong> هو برنامج يعمل كوسيط بين مستخدم الحاسوب والعتاد المادي (Hardware).
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>User View:</strong> Focused on convenience, ease of use, and good performance. Users generally do not care about overall resource utilization on personal devices.</span>
+              <span class="lang-ar"><strong>منظور المستخدم (User View):</strong> يركز على السهولة، راحة الاستخدام، وسرعة الاستجابة، دون الاكتراث بكفاءة استغلال الموارد الإجمالية.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>System View:</strong> The OS is a <em>Resource Allocator</em> (managing CPU time, memory space, file storage, and I/O devices fairly) and a <em>Control Program</em> (preventing errors and improper computer usage).</span>
+              <span class="lang-ar"><strong>منظور النظام (System View):</strong> نظام التشغيل هو <em>موزع للموارد</em> (يفصل في الطلبات المتعارضة بعدالة وكفاءة) و<em>برنامج تحكم</em> (يمنع الأخطاء وسوء استخدام العتاد).</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>⚙️</span>
+            <span class="lang-en">The Kernel & Startup Process</span>
+            <span class="lang-ar">النواة (Kernel) وإقلاع النظام</span>
+          </h4>
+          <p class="card-text lang-en">
+            No universally accepted definition exists for everything shipped in an OS, but computer science defines the <strong>Kernel</strong> as <em>"the one program running at all times on the computer"</em>.
+          </p>
+          <p class="card-text lang-ar">
+            لا يوجد تعريف موحد لكل ما يُشحن مع النظام، لكن المصطلح الأكاديمي الدقيق لـ <strong>النواة (Kernel)</strong> هو <em>"البرنامج الوحيد الذي يعمل طوال الوقت على الحاسوب"</em>.
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>System Programs:</strong> Associated with the OS but not part of the kernel (e.g., shell, compilers, system daemons).</span>
+              <span class="lang-ar"><strong>برامج النظام (System Programs):</strong> تأتي مع النظام لكنها خارج النواة (مثل مفسر الأوامر Shell والأدوات الخدمية).</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Bootstrap Program:</strong> Stored in <strong>ROM or EEPROM (Firmware)</strong>. Initialized at power-up/reboot, initializes registers, memory, and device controllers, then locates and loads the OS kernel into RAM to start execution.</span>
+              <span class="lang-ar"><strong>برنامج الإقلاع (Bootstrap Program):</strong> مخزن في الذاكرة الدائمة <strong>ROM أو EEPROM (Firmware)</strong>. يُحمّل فور تشغيل الحاسوب، ويهيئ المسجلات والذاكرة، ثم يحمل النواة إلى RAM ويبدأ تشغيلها.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- EXAM TIP CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Must-Know Exam Questions</span>
+            <span class="callout-title lang-ar">سؤال امتحاني متكرر جداً</span>
+            <span class="exam-badge">Midterm 2014 & 2022</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Past Exam T/F (2014):</strong> <em>"An operating system does not perform useful function by itself, but it provides an environment within which other programs can do useful work."</em> ➔ <strong>TRUE</strong>.<br>
+            <strong>Past Exam Fill-in-the-blank (2022):</strong> <em>"The one program running at all times on the computer is called the <u>Kernel</u>."</em><br>
+            <strong>Past Exam Fill-in-the-blank (2022):</strong> <em>"<u>Bootstrap program</u> is a piece of software stored in EPROM and loaded when a computer is powered up or rebooted."</em>
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>سؤال صح/خطأ (ميدتيرم 2014):</strong> <em>"نظام التشغيل لا يؤدي وظيفة مفيدة بحد ذاته، ولكنه يوفر البيئة التي يمكن للبرامج الأخرى أداء عمل مفيد داخلها."</em> ➔ <strong>صحيح (True)</strong>.<br>
+            <strong>سؤال أكمل (ميدتيرم 2022):</strong> <em>"البرنامج الوحيد الذي يعمل طوال الوقت على الحاسوب يُسمى <u>النواة (Kernel)</u>."</em><br>
+            <strong>سؤال أكمل (ميدتيرم 2022):</strong> <em>"<u>برنامج الإقلاع (Bootstrap Program)</u> هو برمجية مخزنة في EPROM وتُحمّل عند تشغيل الجهاز أو إعادة تشغيله."</em>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: COMPUTER SYSTEM ORGANIZATION & INTERRUPTS -->
+    <section class="content-section" id="section2">
+      <div class="section-header">
+        <div class="section-number">2</div>
+        <h3 class="section-title lang-en">Computer-System Organization & The Interrupt Mechanism</h3>
+        <h3 class="section-title lang-ar">تنظيم نظام الحاسوب وآلية المقاطعات (Interrupts)</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>⚡</span>
+            <span class="lang-en">Interrupt-Driven Nature</span>
+            <span class="lang-ar">طبيعة النظام القائم على المقاطعات</span>
+          </h4>
+          <p class="card-text lang-en">
+            Modern operating systems are fundamentally <strong>Interrupt-Driven</strong>. If there are no processes to execute, no I/O devices requesting service, and no user input, the OS remains idle waiting for an interrupt event.
+          </p>
+          <p class="card-text lang-ar">
+            تعتبر أنظمة التشغيل الحديثة <strong>أنظمة مدفوعة بالمقاطعات (Interrupt-Driven Systems)</strong>. إذا لم توجد عمليات للتنفيذ أو أجهزة إدخال/إخراج تطلب خدمة، يقف النظام في حالة ترقب وانتظار لوقوع حدث مقاطعة.
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Hardware Interrupt:</strong> Triggered by physical hardware devices sending an electrical signal across the system bus to the CPU (e.g., keyboard keystroke, disk transfer finished).</span>
+              <span class="lang-ar"><strong>مقاطعة مادية (Hardware Interrupt):</strong> يرسلها أحد أجهزة العتاد المادي عبر مسار النظام (Bus) إلى المعالج (مثل ضغطة مفتاح أو انتهاء قراءة القرص).</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Software Interrupt (Trap / Exception):</strong> Generated by software due to an error (e.g., division by zero, invalid memory address) or a deliberate user request for an OS service (<strong>System Call</strong>).</span>
+              <span class="lang-ar"><strong>مقاطعة برمجية (Trap / Exception):</strong> تنتج برمجياً بسبب خطأ (مثل القسمة على صفر أو تجاوز عنوان الذاكرة) أو طلب خدمة نظام متعمد (<strong>استدعاء النظام System Call</strong>).</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🔀</span>
+            <span class="lang-en">Interrupt Architecture & ISR</span>
+            <span class="lang-ar">بنية المقاطعات وروتين الخدمة (ISR)</span>
+          </h4>
+          <p class="card-text lang-en">
+            When an interrupt signals the CPU:
+          </p>
+          <p class="card-text lang-ar">
+            عندما يستقبل المعالج إشارة مقاطعة:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>State Saving:</strong> The CPU immediately suspends execution and saves its current state (Program Counter and CPU registers) so it can resume later without loss of data.</span>
+              <span class="lang-ar"><strong>حفظ الحالة (State Saving):</strong> يُوقف المعالج العمل ويحفظ عداد البرنامج (PC) ومسجلات المعالج للعودة لاحقاً دون ضياع للبيانات.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Interrupt Vector:</strong> An array of memory pointers holding the exact starting addresses of all specialized <strong>Interrupt Service Routines (ISRs)</strong>. Indexed directly by interrupt number.</span>
+              <span class="lang-ar"><strong>جدول متجه المقاطعات (Interrupt Vector):</strong> مصفوفة مؤشرات تحتوي على عناوين بدء كافة <strong>روتينات خدمة المقاطعة (ISRs)</strong>، مفهرسة برقم المقاطعة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Vectored vs Polling:</strong> Vectored interrupts branch immediately using the vector address; polling iterates through devices asking each if it raised the interrupt.</span>
+              <span class="lang-ar"><strong>الموجهة مقابل الاستطلاع:</strong> المقاطعة الموجهة تقفز فوراً لعنوان الروتين؛ بينما الاستطلاع (Polling) يسأل الأجهزة واحداً تلو الآخر إن كان هو صاحب المقاطعة.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- HARD CONCEPT BREAKDOWN -->
+      <div class="callout callout-hard">
+        <div class="callout-icon">💡</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Hard Concept Breakdown: The Complete Interrupt Execution Lifecycle</span>
+            <span class="callout-title lang-ar">تبسيط مفهوم معقد: دورة حياة المقاطعة خطوة بخطوة</span>
+          </div>
+          <p class="callout-body lang-en">
+            Students often confuse what the CPU hardware does automatically versus what the OS software does. Here is the exact chronological sequence:
+          </p>
+          <p class="callout-body lang-ar">
+            غالباً ما يختلط على الطلاب ما يقوم به عتاد المعالج تلقائياً وما يقوم به كود نظام التشغيل. إليك التسلسل الزمني الدقيق:
+          </p>
+
+          <div class="steps-container">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-text">
+                <h4 class="lang-en">Device Controller Signals Interrupt</h4>
+                <h4 class="lang-ar">وحدة التحكم بالجهاز ترسل إشارة مقاطعة</h4>
+                <p class="lang-en">Device finishes operation and asserts an interrupt signal line on the system bus.</p>
+                <p class="lang-ar">ينتهي الجهاز من العملية ويرسل إشارة المقاطعة عبر مسار النظام للمعالج.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-text">
+                <h4 class="lang-en">Hardware State Preservation</h4>
+                <h4 class="lang-ar">حفظ حالة العتاد تلقائياً</h4>
+                <p class="lang-en">Before jumping, the CPU pushes the current Program Counter (PC) and status registers onto the system stack.</p>
+                <p class="lang-ar">يقوم المعالج عتادياً بحفظ عداد البرنامج الحالي ومسجلات الحالة في مكدس النظام (System Stack).</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-text">
+                <h4 class="lang-en">Vector Table Lookup & Dispatch</h4>
+                <h4 class="lang-ar">البحث في جدول المتجهات والقفز</h4>
+                <p class="lang-en">CPU reads the interrupt index, looks up the ISR address in the Interrupt Vector, and loads it into the Program Counter.</p>
+                <p class="lang-ar">يقرأ المعالج رقم المقاطعة ويجلب عنوان الروتين المناسب من جدول المتجهات ويضعه في عداد البرنامج.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-text">
+                <h4 class="lang-en">ISR Execution & State Restoration</h4>
+                <h4 class="lang-ar">تنفيذ الروتين واستعادة الحالة</h4>
+                <p class="lang-en">The ISR handles the device event (e.g., transfers buffer data), executes an 'interrupt return' instruction, restoring registers and resuming the original user program seamlessly.</p>
+                <p class="lang-ar">ينفذ روتين المقاطعة الإجراء (كنقل البيانات من مخزن الجهاز)، ثم ينفذ أمر العودة من المقاطعة، مستعيداً المسجلات ومستأنفاً البرنامج الأصلي.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: I/O STRUCTURE & STORAGE HIERARCHY -->
+    <section class="content-section" id="section3">
+      <div class="section-header">
+        <div class="section-number">3</div>
+        <h3 class="section-title lang-en">I/O Structure, DMA & Storage Hierarchy</h3>
+        <h3 class="section-title lang-ar">بنية الإدخال/الإخراج، النفاذ المباشر للذاكرة (DMA) وتدرج التخزين</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🔄</span>
+            <span class="lang-en">Synchronous vs. Asynchronous I/O</span>
+            <span class="lang-ar">الإدخال والإخراج المتزامن مقابل غير المتزامن</span>
+          </h4>
+          <p class="card-text lang-en">
+            How the OS handles execution flow after an I/O request defines the I/O model:
+          </p>
+          <p class="card-text lang-ar">
+            تحدد استجابة نظام التشغيل بعد طلب الإدخال/الإخراج نموذج العمل المتبع:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Synchronous I/O:</strong> Control returns to user program <em>only after</em> the I/O finishes. The CPU idles in a wait loop or wait instruction until the interrupt occurs. Only one I/O operation can be processed at a time.</span>
+              <span class="lang-ar"><strong>المتزامن (Synchronous):</strong> لا تعود السيطرة لبرنامج المستخدم <em>إلا بعد</em> اكتمال الإدخال/الإخراج. يقف المعالج عاطلاً ينتظر المقاطعة، وتُنفذ عملية واحدة فقط في المرة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Asynchronous I/O:</strong> Control returns to the user program <em>without waiting</em> for I/O completion. A <strong>Device-Status Table</strong> tracks multiple pending requests concurrently.</span>
+              <span class="lang-ar"><strong>غير المتزامن (Asynchronous):</strong> تعود السيطرة لبرنامج المستخدم <em>فوراً دون انتظار</em> انتهاء العملية. يُستخدم <strong>جدول حالة الأجهزة</strong> لإدارة الطلبات المتزامنة.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🚀</span>
+            <span class="lang-en">Direct Memory Access (DMA)</span>
+            <span class="lang-ar">النفاذ المباشر للذاكرة (DMA)</span>
+          </h4>
+          <p class="card-text lang-en">
+            Standard interrupt I/O interrupts the CPU for <em>every single byte</em> of transferred data. For high-speed devices (disks, gigabit Ethernet), this creates disastrous CPU overhead.
+          </p>
+          <p class="card-text lang-ar">
+            في الإدخال/الإخراج المعتاد، يتم مقاطعة المعالج عند نقل <em>كل بايت منفرد</em>، مما يسبب إرهاقاً هائلاً للمعالج عند التعامل مع أجهزة فائقة السرعة كالأقراص والشبكات.
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>DMA Controller:</strong> Transfers an entire block of data directly between its local buffer and main memory without CPU intervention.</span>
+              <span class="lang-ar"><strong>وحدة DMA:</strong> تنقل كتلة كاملة من البيانات مباشرة بين مخزن الجهاز وذاكرة RAM دون إقحام المعالج.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Efficiency:</strong> Generates only <strong>one interrupt per block</strong> instead of one interrupt per byte, freeing the CPU to perform computation.</span>
+              <span class="lang-ar"><strong>الكفاءة:</strong> تُطلق <strong>مقاطعة واحدة فقط لكل كتلة بيانات كاملة</strong> بدلاً من مقاطعة لكل بايت، مما يوفر وقت المعالج.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- COMPARISON TABLE: STORAGE HIERARCHY -->
+      <h4 style="margin: 1.5rem 0 0.5rem; font-size: 1.15rem; color: var(--text-primary);" class="lang-en">The Storage Device Hierarchy (Fastest / Most Expensive ➔ Slower / Less Expensive)</h4>
+      <h4 style="margin: 1.5rem 0 0.5rem; font-size: 1.15rem; color: var(--text-primary);" class="lang-ar">تدرج وسائط التخزين (من الأسرع والأغلى ➔ إلى الأبطأ والأقل تكلفة)</h4>
+
+      <div class="table-responsive">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th class="lang-en">Storage Level</th>
+              <th class="lang-ar">مستوى التخزين</th>
+              <th class="lang-en">Typical Size</th>
+              <th class="lang-ar">الحجم النمطي</th>
+              <th class="lang-en">Access Time</th>
+              <th class="lang-ar">زمن الوصول</th>
+              <th class="lang-en">Managed By</th>
+              <th class="lang-ar">الجهة المديرة</th>
+              <th class="lang-en">Volatility</th>
+              <th class="lang-ar">التطايرية (فقدان البيانات)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Registers (المسجلات)</strong></td>
+              <td>&lt; 1 KB</td>
+              <td>0.25 - 0.5 ns</td>
+              <td class="lang-en">Compiler</td>
+              <td class="lang-ar">المترجم (Compiler)</td>
+              <td style="color: var(--accent-rose); font-weight: 700;">Volatile (متطايرة)</td>
+            </tr>
+            <tr>
+              <td><strong>Cache (L1, L2, L3) (الكاش)</strong></td>
+              <td>&lt; 64 MB</td>
+              <td>0.5 - 25 ns</td>
+              <td class="lang-en">Hardware</td>
+              <td class="lang-ar">العتاد المادي (Hardware)</td>
+              <td style="color: var(--accent-rose); font-weight: 700;">Volatile (متطايرة)</td>
+            </tr>
+            <tr>
+              <td><strong>Main Memory (RAM) (الذاكرة الرئيسية)</strong></td>
+              <td>Up to 128+ GB</td>
+              <td>80 - 250 ns</td>
+              <td class="lang-en">Operating System</td>
+              <td class="lang-ar">نظام التشغيل (OS)</td>
+              <td style="color: var(--accent-rose); font-weight: 700;">Volatile (متطايرة)</td>
+            </tr>
+            <tr>
+              <td><strong>Solid-State Disk (SSD) (الأقراص الصلبة الإلكترونية)</strong></td>
+              <td>Up to 4+ TB</td>
+              <td>25 - 50 μs</td>
+              <td class="lang-en">Operating System</td>
+              <td class="lang-ar">نظام التشغيل (OS)</td>
+              <td style="color: var(--accent-emerald); font-weight: 700;">Nonvolatile (غير متطايرة)</td>
+            </tr>
+            <tr>
+              <td><strong>Magnetic Disk (HDD) (الأقراص الممغنطة)</strong></td>
+              <td>Up to 20+ TB</td>
+              <td>5 ms</td>
+              <td class="lang-en">Operating System</td>
+              <td class="lang-ar">نظام التشغيل (OS)</td>
+              <td style="color: var(--accent-emerald); font-weight: 700;">Nonvolatile (غير متطايرة)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- EXAM TIP CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Must-Know Exam Traps (Storage & Caching)</span>
+            <span class="callout-title lang-ar">أفخاخ امتحانية شائعة (التخزين والكاش)</span>
+            <span class="exam-badge">Midterm 2019 & 2022</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Exam 2019 T/F Question:</strong> <em>"Solid-state disks are nonvolatile and in general are slower than magnetic disks."</em> ➔ <strong>FALSE!</strong> SSDs are <em>faster</em> than magnetic disks.<br>
+            <strong>Exam 2022 Definition:</strong> <em>"Caching:"</em> Copying information into a faster storage system temporarily. Faster storage is checked first; if data resides there, it is used directly (Cache Hit); otherwise it is copied from slower storage (Cache Miss).<br>
+            <strong>Cache Coherency:</strong> In multiprocessor systems where each CPU has its own local cache, hardware must ensure that an update made by one CPU is immediately visible across all other CPU caches.
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>سؤال صح/خطأ (ميدتيرم 2019):</strong> <em>"أقراص الحالة الصلبة (SSD) غير متطايرة وهي عموماً أبطأ من الأقراص الممغنطة."</em> ➔ <strong>خطأ (False)!</strong> لأنها <em>أسرع بكثير</em>.<br>
+            <strong>سؤال تعريف (ميدتيرم 2022):</strong> <em>"الكاشينج (Caching):"</em> نسخ المعلومات مؤقتاً في وسيط تخزين أسرع. يتم فحص الكاش أولاً؛ فإن وُجدت استُخدمت مباشرة (Cache Hit)، وإن لم توجد نُسخت من الوسط الأبطأ (Cache Miss).<br>
+            <strong>اتساق الكاش (Cache Coherency):</strong> في الأنظمة متعددة المعالجات حيث يمتلك كل معالج كاش خاص به، يجب أن يضمن العتاد تحديث القيمة في كاش جميع المعالجات عند تعديلها في أي معالج.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: COMPUTER SYSTEM ARCHITECTURES -->
+    <section class="content-section" id="section4">
+      <div class="section-header">
+        <div class="section-number">4</div>
+        <h3 class="section-title lang-en">Computer-System Architecture: Multiprocessors & Multicore</h3>
+        <h3 class="section-title lang-ar">بنية أنظمة الحاسوب: المعالجات المتعددة ومتعددة الأنوية</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>✨</span>
+            <span class="lang-en">3 Multiprocessor Advantages</span>
+            <span class="lang-ar">مزايا الأنظمة متعددة المعالجات الثلاث</span>
+          </h4>
+          <p class="card-text lang-en">
+            Systems having two or more processors in close communication sharing the computer bus, clock, memory, and peripheral devices provide:
+          </p>
+          <p class="card-text lang-ar">
+            الأنظمة التي تحتوي على معالجين أو أكثر متصلين ببعضهم ويشتركون في مسار النظام، الساعة، الذاكرة والأجهزة الطرفية، تقدم 3 مزايا:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>1. Increased Throughput:</strong> By adding more processors, more work is completed in less time (though speedup ratio is not strictly N due to overhead and contention).</span>
+              <span class="lang-ar"><strong>1. زيادة الإنتاجية (Throughput):</strong> إنجاز عمل أكبر في زمن أقل.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>2. Economy of Scale:</strong> Costs significantly less than equivalent separate single systems because they share power supplies, memory, and mass storage.</span>
+              <span class="lang-ar"><strong>2. اقتصاد الحجم (Economy of Scale):</strong> تكلفة أقل لمشاركة مزود الطاقة، الذاكرة والتخزين مقارنة بأجهزة منفردة متعددة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>3. Increased Reliability:</strong> Graceful degradation or <em>Fault Tolerance</em>. If one processor fails, the entire system does not crash; it simply continues operating at a slightly reduced speed.</span>
+              <span class="lang-ar"><strong>3. زيادة الاعتمادية (Reliability):</strong> التدهور التدريجي ومقاومة الأعطال؛ إذا تعطل معالج لا يتوقف النظام بأكمله، بل يكمل العمل بسرعة أقل.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>⚙️</span>
+            <span class="lang-en">AMP vs. SMP Multiprocessing</span>
+            <span class="lang-ar">المعالجة غير المتماثلة (AMP) مقابل المتماثلة (SMP)</span>
+          </h4>
+          <p class="card-text lang-en">
+            The two dominant multiprocessor paradigms:
+          </p>
+          <p class="card-text lang-ar">
+            النموذجان الرئيسيان للمعالجة المتعددة:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Asymmetric Multiprocessing (AMP):</strong> "Boss-Worker" model. A master/boss processor controls the system, manages resources, and schedules specific tasks to worker processors.</span>
+              <span class="lang-ar"><strong>غير المتماثلة (AMP):</strong> نموذج "الرئيس والعمال (Boss-Worker)". معالج رئيسي يدير النظام ويوزع المهام على المعالجات الأخرى.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Symmetric Multiprocessing (SMP):</strong> All processors are <strong>Peers</strong>. No boss-worker relationship exists; each processor runs an identical copy of the OS and executes tasks concurrently.</span>
+              <span class="lang-ar"><strong>المتماثلة (SMP):</strong> جميع المعالجات <strong>أقران متساوون (Peers)</strong>. لا يوجد رئيس؛ كل معالج ينفذ نسخة نظام التشغيل والمهام بالتوازي.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- COMPARISON TABLE: MULTIPROCESSORS VS MULTICORE -->
+      <h4 style="margin: 1.5rem 0 0.5rem; font-size: 1.15rem; color: var(--text-primary);" class="lang-en">Crucial Distinction: Multiprocessors vs. Multi-core</h4>
+      <h4 style="margin: 1.5rem 0 0.5rem; font-size: 1.15rem; color: var(--text-primary);" class="lang-ar">مقارنة امتحانية كبرى: المعالجات المتعددة مقابل متعدد الأنوية</h4>
+
+      <div class="table-responsive">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th class="lang-en">Feature</th>
+              <th class="lang-ar">وجه المقارنة</th>
+              <th class="lang-en">Multiprocessor Systems</th>
+              <th class="lang-ar">الأنظمة متعددة المعالجات (Multiprocessors)</th>
+              <th class="lang-en">Multi-Core Systems</th>
+              <th class="lang-ar">الأنظمة متعددة الأنوية (Multi-Core)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="lang-en"><strong>Physical Layout</strong></td>
+              <td class="lang-ar"><strong>التصميم الفيزيائي</strong></td>
+              <td class="lang-en">Multiple separate physical CPU chips plugged into separate sockets on the motherboard.</td>
+              <td class="lang-ar">رقاقات معالجات منفصلة في مقابس مستقلة على اللوحة الأم.</td>
+              <td class="lang-en">Multiple computing execution cores integrated onto a <strong>single physical chip</strong>.</td>
+              <td class="lang-ar">أنوية حاسوبية متعددة مدمجة داخل <strong>رقاقة شريحة فيزيائية واحدة</strong>.</td>
+            </tr>
+            <tr>
+              <td class="lang-en"><strong>Inter-Communication Speed</strong></td>
+              <td class="lang-ar"><strong>سرعة التواصل البيني</strong></td>
+              <td class="lang-en">Slower; must communicate across off-chip system bus.</td>
+              <td class="lang-ar">أبطأ؛ تتواصل عبر مسار اللوحة الأم الخارجي.</td>
+              <td class="lang-en">Extremely fast; communicates on-chip with shared L2/L3 cache.</td>
+              <td class="lang-ar">فائقة السرعة؛ اتصال داخلي على نفس الرقاقة مع كاش مشترك.</td>
+            </tr>
+            <tr>
+              <td class="lang-en"><strong>Power Consumption</strong></td>
+              <td class="lang-ar"><strong>استهلاك الطاقة</strong></td>
+              <td class="lang-en">Higher electrical power and heat output.</td>
+              <td class="lang-ar">استهلاك طاقة وحرارة أعلى.</td>
+              <td class="lang-en">Significantly lower power consumption and higher energy efficiency.</td>
+              <td class="lang-ar">أكثر كفاءة واستهلاك أقل بكثير للطاقة.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- EXAM TIP CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Past Exam Spotlight: Essay & T/F Questions</span>
+            <span class="callout-title lang-ar">سؤال امتحاني مقالي متكرر بنصّه</span>
+            <span class="exam-badge">Midterm 2019 Q3 & 2021 Q2</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Midterm 2019 Q3 (5 Marks!):</strong> <em>"What are the main types of multiprocessor systems? What are the advantages of using multiprocessors?"</em><br>
+            ➔ Types: Asymmetric (Boss-Worker) and Symmetric (SMP - Peers). Advantages: 1. Increased throughput, 2. Economy of scale, 3. Increased reliability.<br>
+            <strong>Midterm 2021 Q2:</strong> <em>"What is the difference between Multiprocessors and Multi-core?"</em> (See table above).<br>
+            <strong>Midterm 2022 T/F:</strong> <em>"Multiprocessor architecture increases throughput and decreases reliability."</em> ➔ <strong>FALSE</strong> (It increases reliability!).
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>ميدتيرم 2019 سؤال 3 (5 درجات كاملة):</strong> <em>"ما هي الأنواع الرئيسية لأنظمة المعالجات المتعددة وما هي مزايا استخدامها؟"</em><br>
+            ➔ الأنواع: غير المتماثلة (AMP - رئيس وعمال) والمتماثلة (SMP - أقران). المزايا: 1. زيادة الإنتاجية، 2. اقتصاد الحجم، 3. زيادة الاعتمادية ومقاومة الأعطال.<br>
+            <strong>ميدتيرم 2021 سؤال 2:</strong> <em>"ما الفرق بين Multiprocessors و Multi-core؟"</em> (كما هو موضح بالجدول أعلاه).<br>
+            <strong>ميدتيرم 2022 صح/خطأ:</strong> <em>"معمارية المعالجات المتعددة تزيد الإنتاجية وتقلل الاعتمادية."</em> ➔ <strong>خطأ (False)</strong> (بل تزيد الاعتمادية!).
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: OPERATING SYSTEM STRUCTURE & OPERATIONS -->
+    <section class="content-section" id="section5">
+      <div class="section-header">
+        <div class="section-number">5</div>
+        <h3 class="section-title lang-en">OS Structure, Dual-Mode Protection & Hardware Timer</h3>
+        <h3 class="section-title lang-ar">هيكلية النظام، حماية الوضع المزدوج (Dual-Mode) ومؤقت العتاد</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>📊</span>
+            <span class="lang-en">Multiprogramming vs. Multitasking</span>
+            <span class="lang-ar">البرمجة المتعددة مقابل مشاركة الوقت</span>
+          </h4>
+          <p class="card-text lang-en">
+            Two foundational concepts that students frequently mix up on exams:
+          </p>
+          <p class="card-text lang-ar">
+            مفهومان جوهريان يكثر الخلط بينهما في الامتحانات:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Multiprogramming:</strong> Keeps multiple jobs in memory simultaneously. When the currently running job must wait (e.g., for I/O), the OS switches the CPU to another job. <strong>Primary Goal: MAXIMIZE CPU utilization</strong> so the processor is never idle.</span>
+              <span class="lang-ar"><strong>البرمجة المتعددة (Multiprogramming):</strong> الاحتفاظ بعدة وظائف في الذاكرة معاً. عندما تنتظر العملية الحالية الإدخال/الإخراج، يُسند المعالج لعملية أخرى. <strong>الهدف الأساسي: تعظيم استغلال المعالج (Maximize CPU utilization)</strong>.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Multitasking (Timesharing):</strong> A logical extension of multiprogramming. The CPU switches between jobs so rapidly (in milliseconds) that users can interact with each program while it runs. <strong>Primary Goal: MINIMIZE response time</strong> (&lt; 1 second) for interactive computing.</span>
+              <span class="lang-ar"><strong>مشاركة الوقت (Timesharing / Multitasking):</strong> امتداد منطقي للبرمجة المتعددة. يبدل المعالج بين العمليات بسرعة فائقة تمكّن المستخدمين من التفاعل المباشر مع برامجهم. <strong>الهدف الأساسي: تقليل زمن الاستجابة (Minimize response time)</strong>.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🛡️</span>
+            <span class="lang-en">Dual-Mode Operation & Mode Bit</span>
+            <span class="lang-ar">الوضع المزدوج (Dual-Mode) وبت الوضع</span>
+          </h4>
+          <p class="card-text lang-en">
+            To prevent rogue or faulty user programs from crashing the entire system or tampering with other users' memory, hardware provides a <strong>Mode Bit</strong>:
+          </p>
+          <p class="card-text lang-ar">
+            لحماية النظام من برامج المستخدم الخاطئة أو الخبيثة من إسقاط النظام أو التلاعب بذاكرة الآخرين، يوفر العتاد <strong>بت الوضع (Mode Bit)</strong>:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>User Mode (Mode bit = 1):</strong> Code executed on behalf of the user. Cannot execute privileged instructions directly.</span>
+              <span class="lang-ar"><strong>وضع المستخدم (User Mode - بت = 1):</strong> يتم فيه تنفيذ كود المستخدم، وممنوع من تشغيل الأوامر المحمية مباشرة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Kernel / Supervisor Mode (Mode bit = 0):</strong> Code executed on behalf of the OS. Full access to hardware, all memory, and privileged instructions.</span>
+              <span class="lang-ar"><strong>وضع النواة (Kernel Mode - بت = 0):</strong> ينفذ كود نظام التشغيل، وله صلاحية مطلقة على العتاد والأوامر المحمية.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Privileged Instructions:</strong> Can ONLY be executed in kernel mode (e.g., direct I/O control, clearing memory, disabling interrupts, modifying the timer, and changing the mode bit!).</span>
+              <span class="lang-ar"><strong>الأوامر المحمية (Privileged Instructions):</strong> لا يمكن تنفيذها إلا في وضع النواة (مثل أوامر I/O، تعديل المؤقت، تعطيل المقاطعات، وتغيير بت الوضع!).</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- COMPARISON TABLE: MULTIPROGRAMMING VS TIMESHARING -->
+      <div class="table-responsive">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th class="lang-en">Dimension</th>
+              <th class="lang-ar">وجه المقارنة</th>
+              <th class="lang-en">Multiprogramming</th>
+              <th class="lang-ar">البرمجة المتعددة (Multiprogramming)</th>
+              <th class="lang-en">Multitasking / Timesharing</th>
+              <th class="lang-ar">مشاركة الوقت (Timesharing)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="lang-en"><strong>Core Objective</strong></td>
+              <td class="lang-ar"><strong>الهدف الجوهري</strong></td>
+              <td class="lang-en">Keep CPU busy at all times (Maximize CPU utilization).</td>
+              <td class="lang-ar">إشغال المعالج دائماً وتعظيم كفاءة استغلاله.</td>
+              <td class="lang-en">Provide fast interactive user response time (&lt; 1 sec).</td>
+              <td class="lang-ar">توفير زمن استجابة تفاعلي سريع جداً للمستخدم.</td>
+            </tr>
+            <tr>
+              <td class="lang-en"><strong>Switching Trigger</strong></td>
+              <td class="lang-ar"><strong>سبب التبديل بين العمليات</strong></td>
+              <td class="lang-en">Switches only when current job blocks for I/O or an event.</td>
+              <td class="lang-ar">التبديل يحدث فقط عند انتظار العملية لـ I/O.</td>
+              <td class="lang-en">Switches frequently based on time slices (Timer quantum).</td>
+              <td class="lang-ar">التبديل مستمر وسريع وفق شرائح زمنية يحددها المؤقت.</td>
+            </tr>
+            <tr>
+              <td class="lang-en"><strong>User Interaction</strong></td>
+              <td class="lang-ar"><strong>تفاعل المستخدم</strong></td>
+              <td class="lang-en">Non-interactive (batch jobs submitted and queued).</td>
+              <td class="lang-ar">غير تفاعلي غالباً (معالجة دفعات Batch).</td>
+              <td class="lang-en">Direct, highly interactive multi-user environment.</td>
+              <td class="lang-ar">تفاعلي مباشر بين المستخدم والنظام أثناء التنفيذ.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- EXAM TIP CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Must-Know Exam Traps (Dual Mode & Multiprogramming)</span>
+            <span class="callout-title lang-ar">فخاخ امتحانية مؤكدة (الوضع المزدوج والبرمجة المتعددة)</span>
+            <span class="exam-badge">Midterm 2014 & 2019</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Midterm 2014 T/F:</strong> <em>"The objective of multiprogramming is to have some process running at all times, to minimize CPU utilization."</em> ➔ <strong>FALSE!</strong> It is to <em>maximize</em> CPU utilization.<br>
+            <strong>Midterm 2019 T/F:</strong> <em>"The instruction to switch to user mode is an example of a privileged instruction."</em> ➔ <strong>TRUE!</strong> Any instruction that modifies the mode bit is strictly privileged. A user program cannot simply declare itself in kernel mode.<br>
+            <strong>Hardware Timer:</strong> Prevents user programs from monopolizing the CPU or running in infinite loops. The OS sets the timer before dispatching a process. When the timer decrements to 0, it triggers an interrupt, returning control back to the OS.
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>ميدتيرم 2014 صح/خطأ:</strong> <em>"الهدف من البرمجة المتعددة هو إبقاء عملية تعمل طوال الوقت لتقليل استغلال المعالج (minimize)."</em> ➔ <strong>خطأ (False)!</strong> الهدف هو <em>تعظيم (maximize)</em> استغلال المعالج.<br>
+            <strong>ميدتيرم 2019 صح/خطأ:</strong> <em>"أمر التبديل إلى وضع المستخدم هو مثال على أمر محمي (Privileged Instruction)."</em> ➔ <strong>صحيح (True)!</strong> لأن التلاعب ببت الوضع محصور بالنواة فقط.<br>
+            <strong>مؤقت العتاد (Hardware Timer):</strong> يمنع استئثار برنامج المستخدم بالمعالج أو دخوله في حلقة مفرغة (Infinite Loop) عبر إطلاق مقاطعة قسرية عند وصول العداد لصفر لاستعادة النواة لزمام الأمور.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: COMPUTING ENVIRONMENTS -->
+    <section class="content-section" id="section6">
+      <div class="section-header">
+        <div class="section-number">6</div>
+        <h3 class="section-title lang-en">Computing Environments: Virtualization, Cloud & Real-Time</h3>
+        <h3 class="section-title lang-ar">بيئات الحوسبة: الحوسبة الافتراضية، السحابية والأنظمة اللحظية</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>📦</span>
+            <span class="lang-en">Virtualization vs. Emulation</span>
+            <span class="lang-ar">البيئات الافتراضية (Virtualization) مقابل المحاكاة (Emulation)</span>
+          </h4>
+          <p class="card-text lang-en">
+            Crucial architectural difference:
+          </p>
+          <p class="card-text lang-ar">
+            فارق جوهري في بنية التشغيل:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Emulation:</strong> Used when the target computer hardware architecture differs from the host (e.g., running Intel x86 code on an ARM CPU). Translates instructions in software; slowest execution method.</span>
+              <span class="lang-ar"><strong>المحاكاة (Emulation):</strong> تُستخدم عندما يختلف معمار عتاد المصدر عن الهدف (مثل تشغيل كود Intel x86 على معالج ARM). يتم ترجمة الأوامر برمجياً وهو الأسلوب الأبطأ.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Virtualization:</strong> Guest OS is natively compiled for the same CPU architecture as the host. The <strong>Virtual Machine Manager (VMM / Hypervisor)</strong> allows guest OSs to run with near-native hardware speed.</span>
+              <span class="lang-ar"><strong>الافتراضية (Virtualization):</strong> نظام الضيف مترجم أصلاً لنفس معمارية المعالج، ويتولى مدير الأجهزة الافتراضية (VMM) تشغيله بسرعة تقارب سرعة العتاد الأصلي.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>⏱️</span>
+            <span class="lang-en">Real-Time Embedded Systems</span>
+            <span class="lang-ar">الأنظمة المدمجة ذات الوقت الحقيقي (Real-Time)</span>
+          </h4>
+          <p class="card-text lang-en">
+            The most prevalent form of computers worldwide (automotive, robotics, medical instruments, avionics):
+          </p>
+          <p class="card-text lang-ar">
+            أكثر أشكال الحواسيب انتشاراً في العالم (السيارات، الروبوتات، الأجهزة الطبية، الملاحة الجوية):
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Rigid Time Constraints:</strong> Real-time systems are governed by strict, predefined <strong>TIME constraints</strong>. Processing must be guaranteed to finish within the time deadline; otherwise, catastrophic system failure occurs!</span>
+              <span class="lang-ar"><strong>قيود زمنية صارمة:</strong> محكومة بـ <strong>محددات زمنية قاطعة (Time Constraints)</strong>. يجب اكتمال المعالجة قبل الموعد النهائي، وإلا حدث فشل كامل وكارثي للنظام!</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Exam Trap Note:</strong> It is strictly <em>time</em> constraints, NOT memory or space constraints!</span>
+              <span class="lang-ar"><strong>تنبيه امتحاني دقيق:</strong> القيود هي قيود <em>زمنية</em> حتمية وليست قيوداً على المساحة أو الحجم!</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- EXAM TIP CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Past Exam True/False Trap (Real-Time Systems)</span>
+            <span class="callout-title lang-ar">فخ امتحاني خبيث مكرر (أنظمة الوقت الحقيقي)</span>
+            <span class="exam-badge">Midterm 2019 Q1.4</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Midterm 2019 Q1.4:</strong> <em>"Processing of a real-time system must be done within the predefined space constraints, or the system will fail."</em> ➔ <strong>FALSE!</strong> It must be done within predefined <strong>TIME</strong> constraints, not space constraints!
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>سؤال ميدتيرم 2019:</strong> <em>"يجب إتمام المعالجة في نظام الوقت الحقيقي ضمن قيود المساحة (space constraints) المحددة مسبقاً، وإلا سيفشل النظام."</em> ➔ <strong>خطأ (False)!</strong> لأن الفشل يحدث عند تجاوز قيود <strong>الوقت (Time)</strong> وليس قيود المساحة!
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 7: KEY TERMINOLOGY GLOSSARY -->
+    <section class="content-section" id="section7">
+      <div class="section-header">
+        <div class="section-number">7</div>
+        <h3 class="section-title lang-en">Chapter 1 Key Terms & Exam Glossary</h3>
+        <h3 class="section-title lang-ar">قاموس المصطلحات والمفاهيم المحورية للفصل الأول</h3>
+      </div>
+
+      <div class="glossary-grid">
+        <div class="term-card">
+          <div class="term-en">Operating System</div>
+          <div class="term-ar">نظام التشغيل</div>
+          <p class="term-def lang-en">An intermediary program between the computer user and hardware managing resources and executing user programs.</p>
+          <p class="term-def lang-ar">برنامج وسيط بين المستخدم وعتاد الحاسوب يدير الموارد وينفذ برامج المستخدمين بكفاءة.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Kernel</div>
+          <div class="term-ar">النواة</div>
+          <p class="term-def lang-en">The core program running at all times on the computer, controlling hardware and critical operations.</p>
+          <p class="term-def lang-ar">البرنامج الجوهري الذي يعمل باستمرار على الحاسوب طوال فترة تشغيله ويدير العتاد والعمليات الحيوية.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Trap / Exception</div>
+          <div class="term-ar">المقاطعة البرمجية (الاستثناء)</div>
+          <p class="term-def lang-en">A software-generated interrupt caused by an error (divide-by-zero) or a user system call request.</p>
+          <p class="term-def lang-ar">مقاطعة برمجية ناتجة عن خطأ برمجي (كالقسمة على صفر) أو طلب خدمة نظام عبر System Call.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Direct Memory Access (DMA)</div>
+          <div class="term-ar">النفاذ المباشر للذاكرة</div>
+          <p class="term-def lang-en">High-speed data transfer directly between I/O controller buffer and RAM with only one interrupt per block.</p>
+          <p class="term-def lang-ar">نقل كتل البيانات مباشرة بين مخزن وحدة التحكم والذاكرة دون إشغال المعالج، بمقاطعة واحدة لكل كتلة.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Symmetric Multiprocessing (SMP)</div>
+          <div class="term-ar">المعالجة المتعددة المتماثلة</div>
+          <p class="term-def lang-en">Multiprocessor architecture where each processor performs all tasks as peers, with no boss-worker relationship.</p>
+          <p class="term-def lang-ar">معمارية متعددة المعالجات تعمل فيها جميع المعالجات كأقران متساوين دون وجود رئيس ومرؤوسين.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Dual-Mode Operation</div>
+          <div class="term-ar">تشغيل الوضع المزدوج</div>
+          <p class="term-def lang-en">Hardware mechanism using a Mode Bit to distinguish between User Mode (1) and Kernel Mode (0) for system protection.</p>
+          <p class="term-def lang-ar">آلية عتادية تعتمد على بت الوضع للتمييز بين وضع المستخدم (1) ووضع النواة (0) لحماية النظام.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 8: INTERACTIVE CHAPTER QUIZ -->
+    <section class="quiz-section" id="quiz">
+      <div class="quiz-header">
+        <h3 class="quiz-title lang-en">Interactive Knowledge Check</h3>
+        <h3 class="quiz-title lang-ar">اختبار تقييم المعرفة التفاعلي</h3>
+        <p class="quiz-subtitle lang-en">5 High-Yield MCQs curated directly from Cairo University Past Midterms & Quizzes</p>
+        <p class="quiz-subtitle lang-ar">5 أسئلة اختيار من متعدد مستخلصة مباشرة من امتحانات الميدتيرم السابقة</p>
+      </div>
+
+      <form id="quizForm">
+
+        <!-- QUESTION 1 -->
+        <div class="question-block" data-question="1">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 1 of 5</span>
+            <span class="question-badge lang-ar">السؤال 1 من 5</span>
+            <span class="question-exam-tag">Midterm 2019 & 2022</span>
+          </div>
+          <p class="question-text lang-en">
+            Which of the following operations is classified as a <strong>Privileged Instruction</strong> that can strictly be executed ONLY in Kernel Mode?
+          </p>
+          <p class="question-text lang-ar">
+            أي من العمليات التالية تُصنف كـ <strong>أمر محمي (Privileged Instruction)</strong> يقتصر تنفيذه حصرياً على وضع النواة (Kernel Mode)؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q1" value="A">
+              <span class="lang-en">A) Reading the time-of-day clock</span>
+              <span class="lang-ar">أ) قراءة ساعة الوقت الحالية للنظام</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q1" value="B">
+              <span class="lang-en">B) Changing the Mode Bit to switch from Kernel Mode to User Mode</span>
+              <span class="lang-ar">ب) تعديل بت الوضع (Mode Bit) للتحويل من وضع النواة إلى وضع المستخدم</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q1" value="C">
+              <span class="lang-en">C) Executing a standard arithmetic addition instruction (ADD)</span>
+              <span class="lang-ar">ج) تنفيذ أمر جمع حسابي قياسي في البرنامج (ADD)</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q1" value="D">
+              <span class="lang-en">D) Calling a user-defined mathematical helper function</span>
+              <span class="lang-ar">د) استدعاء دالة رياضية مساعدة مخصصة من قبل المستخدم</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-1"></div>
+        </div>
+
+        <!-- QUESTION 2 -->
+        <div class="question-block" data-question="2">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 2 of 5</span>
+            <span class="question-badge lang-ar">السؤال 2 من 5</span>
+            <span class="question-exam-tag">Midterm 2019 Q3 & 2021 Q2</span>
+          </div>
+          <p class="question-text lang-en">
+            In <strong>Symmetric Multiprocessing (SMP)</strong>, what is the defined organizational relationship among the processors?
+          </p>
+          <p class="question-text lang-ar">
+            في نظام <strong>المعالجة المتعددة المتماثلة (SMP)</strong>، ما هي العلاقة التنظيمية الدقيقة بين المعالجات؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q2" value="A">
+              <span class="lang-en">A) A designated boss processor controls worker processors and allocates all work</span>
+              <span class="lang-ar">أ) معالج رئيس (Boss) يدير المعالجات التابعة ويوزع عليها كافة المهام</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q2" value="B">
+              <span class="lang-en">B) All processors are peers where each processor performs all tasks without a boss-worker relationship</span>
+              <span class="lang-ar">ب) جميع المعالجات أقران (Peers) متساوون يؤدي كل منها كافة مهام النظام دون وجود رئيس ومرؤوس</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q2" value="C">
+              <span class="lang-en">C) Only one processor can access main memory while all others must stay in hot-standby</span>
+              <span class="lang-ar">ج) معالج واحد فقط له حق الوصول للذاكرة بينما تبقى باقي المعالجات في وضع الاستعداد الاحتياطي</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q2" value="D">
+              <span class="lang-en">D) Each processor runs a completely different instruction set architecture via software emulation</span>
+              <span class="lang-ar">د) يعمل كل معالج بمعمارية أوامر مختلفة كلياً عبر المحاكاة البرمجية</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-2"></div>
+        </div>
+
+        <!-- QUESTION 3 -->
+        <div class="question-block" data-question="3">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 3 of 5</span>
+            <span class="question-badge lang-ar">السؤال 3 من 5</span>
+            <span class="question-exam-tag">Midterm 2014 & 2021</span>
+          </div>
+          <p class="question-text lang-en">
+            What is the primary architectural objective of <strong>Multiprogramming</strong> compared to Timesharing?
+          </p>
+          <p class="question-text lang-ar">
+            ما هو الهدف المعماري الأساسي من <strong>البرمجة المتعددة (Multiprogramming)</strong> مقارنة بمشاركة الوقت؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q3" value="A">
+              <span class="lang-en">A) To guarantee an interactive user response time under one second</span>
+              <span class="lang-ar">أ) ضمان زمن استجابة تفاعلي للمستخدم يقل عن ثانية واحدة</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q3" value="B">
+              <span class="lang-en">B) To keep multiple jobs in memory so the CPU always has work, maximizing CPU utilization</span>
+              <span class="lang-ar">ب) الاحتفاظ بعدة وظائف بالذاكرة ليجد المعالج عملاً دائماً، مما يعظم استغلال المعالج (Maximize CPU utilization)</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q3" value="C">
+              <span class="lang-en">C) To minimize CPU utilization so the machine conserves maximum electrical power</span>
+              <span class="lang-ar">ج) تقليل استغلال المعالج لأقصى درجة لتوفير استهلاك الطاقة الكهربائية</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q3" value="D">
+              <span class="lang-en">D) To allow processes to bypass the kernel and access physical hardware directly</span>
+              <span class="lang-ar">د) السماح للعمليات بتجاوز النواة والوصول إلى العتاد المادي مباشرة</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-3"></div>
+        </div>
+
+        <!-- QUESTION 4 -->
+        <div class="question-block" data-question="4">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 4 of 5</span>
+            <span class="question-badge lang-ar">السؤال 4 من 5</span>
+            <span class="question-exam-tag">Midterm 2014, 2019 & 2022</span>
+          </div>
+          <p class="question-text lang-en">
+            Why is <strong>Direct Memory Access (DMA)</strong> utilized for high-speed I/O devices instead of byte-by-byte interrupt-driven I/O?
+          </p>
+          <p class="question-text lang-ar">
+            لماذا يُستخدم <strong>النفاذ المباشر للذاكرة (DMA)</strong> لأجهزة الإدخال/الإخراج فائقة السرعة بدلاً من المقاطعة لكل بايت؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q4" value="A">
+              <span class="lang-en">A) It converts nonvolatile storage into volatile memory to boost performance</span>
+              <span class="lang-ar">أ) لأنه يحول وسائط التخزين الدائمة إلى ذاكرة متطايرة لزيادة الأداء</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q4" value="B">
+              <span class="lang-en">B) It eliminates the need for device drivers and device controllers entirely</span>
+              <span class="lang-ar">ب) لأنه يلغي الحاجة لتعريفات الأجهزة ووحدات التحكم بشكل كامل</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q4" value="C">
+              <span class="lang-en">C) It transfers blocks of data directly to/from memory without CPU intervention, generating only one interrupt per block</span>
+              <span class="lang-ar">ج) لأنه ينقل كتل البيانات مباشرة من/إلى الذاكرة دون تدخل المعالج، مُولداً مقاطعة واحدة فقط لكل كتلة بيانات</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q4" value="D">
+              <span class="lang-en">D) It forces the CPU to idle in a tight wait loop during disk transmission</span>
+              <span class="lang-ar">د) لأنه يجبر المعالج على الانتظار العاطل (Wait loop) طوال فترة النقل من القرص</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-4"></div>
+        </div>
+
+        <!-- QUESTION 5 -->
+        <div class="question-block" data-question="5">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 5 of 5</span>
+            <span class="question-badge lang-ar">السؤال 5 من 5</span>
+            <span class="question-exam-tag">Midterm 2019 & 2022</span>
+          </div>
+          <p class="question-text lang-en">
+            Which software piece is <em>"the one program running at all times on the computer"</em>, and which firmware program initializes the machine upon boot?
+          </p>
+          <p class="question-text lang-ar">
+            أي برمجية تُعرف بأنها <em>"البرنامج الوحيد الذي يعمل باستمرار على الحاسوب"</em>، وما هو برنامج البرمجيات الدائمة الذي يبدأ تشغيل الجهاز عند الإقلاع؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q5" value="A">
+              <span class="lang-en">A) System Program; Device Driver</span>
+              <span class="lang-ar">أ) برنامج النظام (System Program)؛ ومعرّف الجهاز (Device Driver)</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q5" value="B">
+              <span class="lang-en">B) Command Interpreter; Disk Controller</span>
+              <span class="lang-ar">ب) مفسر الأوامر (Command Interpreter)؛ ووحدة تحكم القرص</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q5" value="C">
+              <span class="lang-en">C) Kernel; Bootstrap Program stored in ROM/EEPROM</span>
+              <span class="lang-ar">ج) النواة (Kernel)؛ وبرنامج الإقلاع (Bootstrap Program) المخزن في ROM/EEPROM</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q5" value="D">
+              <span class="lang-en">D) Application Program; BIOS Trap Service</span>
+              <span class="lang-ar">د) التطبيق البرمجي (Application Program)؛ وروتين مصيدة BIOS</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-5"></div>
+        </div>
+
+        <!-- Actions -->
+        <div class="quiz-actions">
+          <button type="button" id="submitQuizBtn" class="btn-quiz-submit">
+            <span class="lang-en">Submit Quiz</span>
+            <span class="lang-ar">تسليم الإجابات</span>
+          </button>
+          <button type="button" id="resetQuizBtn" class="btn-quiz-reset">
+            <span class="lang-en">Reset</span>
+            <span class="lang-ar">إعادة الاختبار</span>
+          </button>
+        </div>
+
+      </form>
+
+      <!-- Score Summary Box -->
+      <div id="scoreBox" class="score-summary-box">
+        <div class="score-circle">
+          <span class="score-number" id="scoreNum">0/5</span>
+          <span class="score-percent" id="scorePercent">0%</span>
+        </div>
+        <h4 class="score-status" id="scoreGrade">Excellent!</h4>
+        <p class="score-message" id="scoreFeedback">Detailed evaluation feedback appears here.</p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Page Footer -->
+  <footer class="page-footer">
+    <p class="lang-en">
+      OS MasterStudy &copy; 2026 &bull; Based on Silberschatz Operating System Concepts (9th Ed) & Dr. Khaled Wassif's Lectures & Exams.
+    </p>
+    <p class="lang-ar">
+      دليل أنظمة التشغيل الشامل &copy; 2026 &bull; مستند إلى كتاب سلبرشاتز (Silberschatz 9th Ed) ومحاضرات وامتحانات د. خالد وصيف (كلية الحاسبات والذكاء الاصطناعي).
+    </p>
+  </footer>
+
+  <!-- Interactive JavaScript Engine -->
+  <script>
+    (function() {
+      // Quiz Data & Correct Answers
+      const QUIZ_DATA = {
+        q1: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> Switching the CPU mode bit (from kernel to user, or disabling interrupts) is strictly a privileged instruction. Past Midterm 2019 confirms: "The instruction to switch to user mode is an example of a privileged instruction" (TRUE). User mode code cannot alter mode bits directly.',
+          expAr: '<strong>صحيح (ب):</strong> تعديل بت الوضع (سواء للتحول لوضع المستخدم أو تعطيل المقاطعات) هو أمر محمي حصرياً للنواة، كما ورد بنصه في ميدتيرم 2019. كود المستخدم لا يملك تعديل بت الوضع عتادياً.'
+        },
+        q2: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> In Symmetric Multiprocessing (SMP), all processors are peers; each processor executes all OS and user tasks. In contrast, Asymmetric Multiprocessing (AMP) defines a boss-worker relationship. (Directly from Midterm 2019 Q3 - 5 Marks).',
+          expAr: '<strong>صحيح (ب):</strong> في المعالجة المتماثلة (SMP)، جميع المعالجات أقران متساوون (Peers) ينفذ كل منها مهام النواة والمستخدم. بينما في (AMP) يوجد نموذج الرئيس والعمال (Boss-Worker).'
+        },
+        q3: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> The core purpose of Multiprogramming is to maximize CPU utilization by ensuring that whenever the current process waits for I/O, the OS dispatches the CPU to another job. Midterm 2014 asked if it was to "minimize" CPU utilization (which was False).',
+          expAr: '<strong>صحيح (ب):</strong> الهدف الأساسي من البرمجة المتعددة هو تعظيم استغلال المعالج (Maximize CPU utilization) حتى لا يظل عاطلاً عند انتظار عملية لـ I/O. (سؤال صح وخطأ ميدتيرم 2014).'
+        },
+        q4: {
+          correct: 'C',
+          expEn: '<strong>Correct (C):</strong> Direct Memory Access (DMA) enables high-speed controllers to transfer entire blocks of data directly to/from memory without CPU intervention, generating only one interrupt per block rather than an interrupt per byte.',
+          expAr: '<strong>صحيح (ج):</strong> النفاذ المباشر للذاكرة (DMA) ينقل كتل كاملة من البيانات مباشرة بين الجهاز والذاكرة دون إشغال المعالج، ويُطلق مقاطعة واحدة فقط لكل كتلة بيانات كاملة بدلاً من مقاطعة لكل بايت.'
+        },
+        q5: {
+          correct: 'C',
+          expEn: '<strong>Correct (C):</strong> Computer science and Silberschatz define the Kernel as "the one program running at all times on the computer". The Bootstrap Program, stored in ROM/EEPROM (firmware), initializes registers, memory, and controllers at reboot. (Appeared in Midterm 2022).',
+          expAr: '<strong>صحيح (ج):</strong> النواة (Kernel) هي البرنامج الوحيد الذي يعمل طوال الوقت، وبرنامج الإقلاع (Bootstrap Program) المخزن في ذاكرة ROM/EEPROM هو الذي يهيئ العتاد عند بدء التشغيل (ورد بنصه في ميدتيرم 2022).'
+        }
+      };
+
+      // State Management
+      let currentLang = localStorage.getItem('os_guide_lang') || 'en';
+      let currentTheme = localStorage.getItem('os_guide_theme') || 'dark';
+
+      const themeToggleBtn = document.getElementById('themeToggle');
+      const langToggleBtn = document.getElementById('langToggle');
+      const themeIcon = document.getElementById('themeIcon');
+      const submitQuizBtn = document.getElementById('submitQuizBtn');
+      const resetQuizBtn = document.getElementById('resetQuizBtn');
+      const scoreBox = document.getElementById('scoreBox');
+
+      // Theme Handler
+      function applyTheme(theme) {
+        currentTheme = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('os_guide_theme', theme);
+        if (theme === 'light') {
+          themeIcon.textContent = '🌙';
+          document.getElementById('themeTextEn').textContent = 'Dark';
+          document.getElementById('themeTextAr').textContent = 'ليلي';
+        } else {
+          themeIcon.textContent = '☀️';
+          document.getElementById('themeTextEn').textContent = 'Light';
+          document.getElementById('themeTextAr').textContent = 'نهاري';
+        }
+      }
+
+      // Language Handler
+      function applyLanguage(lang) {
+        currentLang = lang;
+        document.body.setAttribute('data-lang', lang);
+        document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+        document.documentElement.setAttribute('lang', lang);
+        localStorage.setItem('os_guide_lang', lang);
+
+        // Update active explanations text if quiz has been submitted
+        Object.keys(QUIZ_DATA).forEach((key, index) => {
+          const expDiv = document.getElementById(`exp-${index + 1}`);
+          if (expDiv && expDiv.classList.contains('show')) {
+            expDiv.innerHTML = lang === 'ar' ? QUIZ_DATA[key].expAr : QUIZ_DATA[key].expEn;
+          }
+        });
+      }
+
+      // Toggle Event Listeners
+      themeToggleBtn.addEventListener('click', () => {
+        applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+      });
+
+      langToggleBtn.addEventListener('click', () => {
+        applyLanguage(currentLang === 'en' ? 'ar' : 'en');
+      });
+
+      // Interactive Quiz Engine
+      submitQuizBtn.addEventListener('click', () => {
+        let score = 0;
+        const total = Object.keys(QUIZ_DATA).length;
+        let answeredCount = 0;
+
+        Object.keys(QUIZ_DATA).forEach((key, index) => {
+          const qIndex = index + 1;
+          const qBlock = document.querySelector(`.question-block[data-question="${qIndex}"]`);
+          const selectedOption = document.querySelector(`input[name="${key}"]:checked`);
+          const expDiv = document.getElementById(`exp-${qIndex}`);
+          const optionLabels = qBlock.querySelectorAll('.option-label');
+
+          // Reset previous classes
+          optionLabels.forEach(label => {
+            label.classList.remove('is-correct', 'is-wrong');
+          });
+          qBlock.classList.remove('correct-highlight', 'incorrect-highlight');
+
+          const correctVal = QUIZ_DATA[key].correct;
+
+          if (selectedOption) {
+            answeredCount++;
+            const userVal = selectedOption.value;
+
+            if (userVal === correctVal) {
+              score++;
+              qBlock.classList.add('correct-highlight');
+              selectedOption.closest('.option-label').classList.add('is-correct');
+            } else {
+              qBlock.classList.add('incorrect-highlight');
+              selectedOption.closest('.option-label').classList.add('is-wrong');
+              // Highlight the correct one
+              const correctLabel = qBlock.querySelector(`.option-label[data-opt="${correctVal}"]`);
+              if (correctLabel) correctLabel.classList.add('is-correct');
+            }
+          } else {
+            // Unanswered: highlight correct answer
+            qBlock.classList.add('incorrect-highlight');
+            const correctLabel = qBlock.querySelector(`.option-label[data-opt="${correctVal}"]`);
+            if (correctLabel) correctLabel.classList.add('is-correct');
+          }
+
+          // Show explanation
+          expDiv.className = 'question-explanation show explanation-correct';
+          expDiv.innerHTML = currentLang === 'ar' ? QUIZ_DATA[key].expAr : QUIZ_DATA[key].expEn;
+        });
+
+        // Compute Score & Percentage
+        const percentage = Math.round((score / total) * 100);
+        document.getElementById('scoreNum').textContent = `${score}/${total}`;
+        document.getElementById('scorePercent').textContent = `${percentage}%`;
+
+        const gradeElem = document.getElementById('scoreGrade');
+        const feedbackElem = document.getElementById('scoreFeedback');
+
+        if (score === 5) {
+          gradeElem.textContent = currentLang === 'ar' ? 'ممتاز جداً! (100%)' : 'Outstanding Master Level! (100%)';
+          gradeElem.style.color = 'var(--accent-emerald)';
+          feedbackElem.textContent = currentLang === 'ar' 
+            ? 'أحسنت صنعاً! لقد أجبت على كافة الأسئلة الامتحانية بنجاح، ومستواك في مفاهيم الفصل الأول ممتاز وجاهز للميدتيرم.'
+            : 'Flawless performance! You have mastered all core Chapter 1 concepts and past midterm questions. You are completely ready for this chapter on the exam.';
+        } else if (score >= 3) {
+          gradeElem.textContent = currentLang === 'ar' ? 'أداء جيد جداً!' : 'Good Job! Solid Foundation';
+          gradeElem.style.color = 'var(--accent-cyan)';
+          feedbackElem.textContent = currentLang === 'ar'
+            ? 'مستوى جيد جداً. راجع التعليلات الموضحة أسفل الأسئلة التي أخطأت بها لترسيخ الفروق الدقيقة (خاصة بالوضع المزدوج أو النفاذ المباشر للذاكرة).'
+            : 'Good performance! Review the detailed explanations on the questions you missed to solidify subtle distinctions (e.g., dual-mode instructions or DMA behavior).';
+        } else {
+          gradeElem.textContent = currentLang === 'ar' ? 'يحتاج إلى مراجعة' : 'Needs Review & Practice';
+          gradeElem.style.color = 'var(--accent-rose)';
+          feedbackElem.textContent = currentLang === 'ar'
+            ? 'يوصى بإعادة قراءة صناديق "فخاخ الامتحانات" والجداول المقارنة بالأعلى ثم إعادة المحاولة لتحقيق الدرجة النهائية.'
+            : 'We recommend reading through the "Must-Know Exam Tips" and comparison tables above carefully, then retrying the quiz to master these concepts.';
+        }
+
+        scoreBox.classList.add('show');
+        scoreBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+
+      // Reset Handler
+      resetQuizBtn.addEventListener('click', () => {
+        document.getElementById('quizForm').reset();
+        document.querySelectorAll('.question-block').forEach(b => {
+          b.classList.remove('correct-highlight', 'incorrect-highlight');
+        });
+        document.querySelectorAll('.option-label').forEach(l => {
+          l.classList.remove('is-correct', 'is-wrong');
+        });
+        document.querySelectorAll('.question-explanation').forEach(e => {
+          e.classList.remove('show');
+          e.innerHTML = '';
+        });
+        scoreBox.classList.remove('show');
+      });
+
+      // Initialize defaults
+      applyTheme(currentTheme);
+      applyLanguage(currentLang);
+    })();
+  </script>
+</body>
+</html>

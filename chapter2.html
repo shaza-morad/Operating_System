@@ -1,0 +1,2077 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chapter 2: Operating-System Structures | OS MasterStudy</title>
+  <style>
+    :root {
+      --font-en: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      --font-ar: 'Segoe UI', Tahoma, 'Cairo', 'Tajawal', sans-serif;
+      --transition-speed: 0.3s;
+      
+      /* Dark Theme (Default) */
+      --bg-body: #0b0f19;
+      --bg-surface: #111827;
+      --bg-card: #1f2937;
+      --bg-card-hover: #283548;
+      --bg-glass: rgba(17, 24, 39, 0.88);
+      --border-color: #374151;
+      --border-focus: #6366f1;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-primary: #6366f1;
+      --accent-primary-hover: #4f46e5;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --callout-tip-bg: rgba(245, 158, 11, 0.1);
+      --callout-tip-border: #f59e0b;
+      --callout-hard-bg: rgba(99, 102, 241, 0.1);
+      --callout-hard-border: #6366f1;
+      --table-header-bg: #1e293b;
+      --table-zebra-bg: #182234;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="light"] {
+      --bg-body: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --bg-glass: rgba(255, 255, 255, 0.92);
+      --border-color: #e2e8f0;
+      --border-focus: #4f46e5;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --accent-primary: #4f46e5;
+      --accent-primary-hover: #4338ca;
+      --accent-cyan: #0284c7;
+      --accent-emerald: #059669;
+      --accent-amber: #d97706;
+      --accent-rose: #e11d48;
+      --callout-tip-bg: #fffbeb;
+      --callout-tip-border: #d97706;
+      --callout-hard-bg: #eef2ff;
+      --callout-hard-border: #4f46e5;
+      --table-header-bg: #f1f5f9;
+      --table-zebra-bg: #f8fafc;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-en);
+      background-color: var(--bg-body);
+      color: var(--text-primary);
+      line-height: 1.65;
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+      overflow-x: hidden;
+    }
+
+    [data-lang="en"] .lang-ar {
+      display: none !important;
+    }
+    [data-lang="ar"] .lang-en {
+      display: none !important;
+    }
+    [data-lang="ar"] body, 
+    html[dir="rtl"] {
+      font-family: var(--font-ar);
+    }
+
+    .header-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: var(--bg-glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 800;
+      font-size: 1.15rem;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    }
+
+    .logo-text h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .logo-text span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .chapter-links {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      list-style: none;
+    }
+
+    .chapter-link {
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+      transition: all var(--transition-speed);
+    }
+
+    .chapter-link:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-color: var(--border-color);
+    }
+
+    .chapter-link.active {
+      background: var(--accent-primary);
+      color: white;
+      box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .btn-toggle {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all var(--transition-speed);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-toggle:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-primary);
+      transform: translateY(-1px);
+    }
+
+    .main-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(6, 182, 212, 0.08));
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 2.25rem 2rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-banner::after {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, var(--accent-primary) 0%, transparent 70%);
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: var(--accent-primary);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero-title {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+      line-height: 1.25;
+      color: var(--text-primary);
+    }
+
+    .hero-desc {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      max-width: 900px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 0.85rem 1.25rem;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .content-section {
+      margin-bottom: 3rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .section-number {
+      background: var(--accent-primary);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.4rem;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-speed);
+    }
+
+    .info-card:hover {
+      border-color: var(--accent-primary);
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-text {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .card-list {
+      margin-top: 0.75rem;
+      padding-left: 1.25rem;
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+    }
+
+    [dir="rtl"] .card-list {
+      padding-left: 0;
+      padding-right: 1.25rem;
+    }
+
+    .card-list li {
+      margin-bottom: 0.4rem;
+    }
+
+    .callout {
+      border-radius: 10px;
+      padding: 1.25rem 1.4rem;
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      border-left: 4px solid transparent;
+    }
+
+    [dir="rtl"] .callout {
+      border-left: none;
+      border-right: 4px solid transparent;
+    }
+
+    .callout-exam {
+      background: var(--callout-tip-bg);
+      border-color: var(--callout-tip-border);
+    }
+
+    .callout-hard {
+      background: var(--callout-hard-bg);
+      border-color: var(--callout-hard-border);
+    }
+
+    .callout-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .callout-content {
+      flex: 1;
+    }
+
+    .callout-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .callout-title {
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .callout-exam .callout-title {
+      color: var(--accent-amber);
+    }
+
+    .callout-hard .callout-title {
+      color: var(--accent-primary);
+    }
+
+    .exam-badge {
+      background: var(--accent-amber);
+      color: #000;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .callout-body {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.92rem;
+    }
+
+    [dir="rtl"] .compare-table {
+      text-align: right;
+    }
+
+    .compare-table th {
+      background: var(--table-header-bg);
+      color: var(--text-primary);
+      padding: 0.85rem 1rem;
+      font-weight: 700;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .compare-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    .compare-table tr:nth-child(even) td {
+      background: var(--table-zebra-bg);
+    }
+
+    .compare-table tr:hover td {
+      background: var(--bg-card-hover);
+    }
+
+    .steps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      margin: 1.25rem 0;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+    }
+
+    .step-num {
+      background: var(--accent-cyan);
+      color: #000;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .step-text h4 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.2rem;
+    }
+
+    .step-text p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .glossary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .term-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      transition: all var(--transition-speed);
+    }
+
+    .term-card:hover {
+      border-color: var(--accent-emerald);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .term-en {
+      font-weight: 700;
+      color: var(--accent-emerald);
+      font-size: 1rem;
+      margin-bottom: 0.15rem;
+    }
+
+    .term-ar {
+      font-weight: 700;
+      color: var(--accent-cyan);
+      font-size: 0.95rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .term-def {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+    }
+
+    .quiz-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 2.25rem 2rem;
+      margin-top: 3.5rem;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .quiz-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .quiz-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+    }
+
+    .quiz-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .question-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: border-color var(--transition-speed);
+    }
+
+    .question-block.correct-highlight {
+      border-color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .question-block.incorrect-highlight {
+      border-color: var(--accent-rose);
+      background: rgba(244, 63, 94, 0.05);
+    }
+
+    .question-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .question-badge {
+      background: var(--table-header-bg);
+      color: var(--accent-cyan);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    .question-exam-tag {
+      font-size: 0.75rem;
+      color: var(--accent-amber);
+      font-weight: 600;
+    }
+
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      line-height: 1.4;
+    }
+
+    .options-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .option-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.92rem;
+      transition: all var(--transition-speed);
+    }
+
+    .option-label:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+      border-color: var(--border-focus);
+    }
+
+    .option-label input[type="radio"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border-color);
+      border-radius: 50%;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .option-label input[type="radio"]:checked {
+      border-color: var(--accent-primary);
+      background-color: var(--accent-primary);
+      box-shadow: inset 0 0 0 3px var(--bg-surface);
+    }
+
+    .option-label.is-correct {
+      border-color: var(--accent-emerald) !important;
+      background: rgba(16, 185, 129, 0.15) !important;
+      color: var(--accent-emerald) !important;
+      font-weight: 700;
+    }
+
+    .option-label.is-wrong {
+      border-color: var(--accent-rose) !important;
+      background: rgba(244, 63, 94, 0.15) !important;
+      color: var(--accent-rose) !important;
+    }
+
+    .question-explanation {
+      margin-top: 1rem;
+      padding: 0.85rem 1.1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      display: none;
+    }
+
+    .question-explanation.show {
+      display: block;
+    }
+
+    .explanation-correct {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--accent-emerald);
+      color: var(--text-primary);
+    }
+
+    .quiz-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 2rem;
+    }
+
+    .btn-quiz-submit {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      color: white;
+      border: none;
+      padding: 0.85rem 2.2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .btn-quiz-submit:hover {
+      opacity: 0.92;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.45);
+    }
+
+    .btn-quiz-reset {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 0.85rem 1.8rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+    }
+
+    .btn-quiz-reset:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .score-summary-box {
+      margin-top: 2rem;
+      padding: 2rem;
+      border-radius: 12px;
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      text-align: center;
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .score-summary-box.show {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .score-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--table-header-bg);
+      border: 4px solid var(--accent-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+    }
+
+    .score-number {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      line-height: 1;
+    }
+
+    .score-percent {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .score-status {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .score-message {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .page-footer {
+      border-top: 1px solid var(--border-color);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      background: var(--bg-surface);
+    }
+
+    @media (max-width: 868px) {
+      .nav-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .chapter-links {
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+      }
+      .hero-title {
+        font-size: 1.6rem;
+      }
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body data-lang="en">
+
+  <!-- Sticky Top Header & Navigation -->
+  <header class="header-nav">
+    <div class="nav-container">
+      <a href="chapter1.html" class="logo-area">
+        <div class="logo-icon">OS</div>
+        <div class="logo-text">
+          <h1 class="lang-en">OS MasterStudy</h1>
+          <h1 class="lang-ar">دليل أنظمة التشغيل</h1>
+          <span class="lang-en">BCS241 Course Guide</span>
+          <span class="lang-ar">مقرر BCS241 - م/د. خالد وصيف</span>
+        </div>
+      </a>
+
+      <!-- Chapter Switcher Links -->
+      <nav>
+        <ul class="chapter-links">
+          <li><a href="chapter1.html" class="chapter-link">Ch 1: Intro</a></li>
+          <li><a href="chapter2.html" class="chapter-link active">Ch 2: Structure</a></li>
+          <li><a href="chapter3.html" class="chapter-link">Ch 3: Processes</a></li>
+          <li><a href="chapter5.html" class="chapter-link">Ch 5: Sync</a></li>
+          <li><a href="chapter6.html" class="chapter-link">Ch 6: Sched</a></li>
+        </ul>
+      </nav>
+
+      <!-- Language & Theme Controls -->
+      <div class="nav-controls">
+        <button id="themeToggle" class="btn-toggle" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+          <span id="themeIcon">☀️</span>
+          <span class="lang-en" id="themeTextEn">Light</span>
+          <span class="lang-ar" id="themeTextAr">نهاري</span>
+        </button>
+        <button id="langToggle" class="btn-toggle" title="Toggle English/Arabic" aria-label="Toggle Language">
+          <span>🌐</span>
+          <span class="lang-en">العربية</span>
+          <span class="lang-ar">English</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-container">
+
+    <!-- Hero Header Banner -->
+    <header class="hero-banner">
+      <span class="hero-badge lang-en">Chapter 2 Study Guide</span>
+      <span class="hero-badge lang-ar">دليل دراسة الفصل الثاني</span>
+
+      <h2 class="hero-title lang-en">Operating-System Structures</h2>
+      <h2 class="hero-title lang-ar">هياكل وبنية أنظمة التشغيل</h2>
+
+      <p class="hero-desc lang-en">
+        Master operating system services, system calls, the 3 parameter-passing methods, the fundamental separation of policy and mechanism, and kernel architectures (Monolithic, Layered, Microkernels, and Loadable Kernel Modules).
+      </p>
+      <p class="hero-desc lang-ar">
+        أتقن خدمات نظام التشغيل، استدعاءات النظام (System Calls)، الطرق الثلاث لتمرير المعاملات، الفصل الجوهري بين السياسة والآلية (Policy vs Mechanism)، وبنيات النواة (الأحادية، الطبقية، الميكروكنل، والوحدات القابلة للتحميل LKM).
+      </p>
+
+      <div class="hero-stats">
+        <div class="stat-card">
+          <span class="stat-value">51 Slides</span>
+          <span class="stat-label lang-en">Lecture Material</span>
+          <span class="stat-label lang-ar">محتوى المحاضرة</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" style="color: var(--accent-amber);">High Yield</span>
+          <span class="stat-label lang-en">Exam Frequency</span>
+          <span class="stat-label lang-ar">الوزن في الامتحانات</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" style="color: var(--accent-emerald);">3x Essay Question</span>
+          <span class="stat-label lang-en">Parameter Passing</span>
+          <span class="stat-label lang-ar">سؤال مقالي تكرر 3 مرات</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">5 MCQs</span>
+          <span class="stat-label lang-en">Interactive Quiz</span>
+          <span class="stat-label lang-ar">اختبار تفاعلي</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- SECTION 1: OPERATING-SYSTEM SERVICES -->
+    <section class="content-section" id="section1">
+      <div class="section-header">
+        <div class="section-number">1</div>
+        <h3 class="section-title lang-en">Operating System Services: User View vs. System Operation</h3>
+        <h3 class="section-title lang-ar">خدمات نظام التشغيل: منظور المستخدم مقابل كفاءة النظام</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>👤</span>
+            <span class="lang-en">Services Helpful to the User</span>
+            <span class="lang-ar">خدمات موجّهة لخدمة المستخدم</span>
+          </h4>
+          <p class="card-text lang-en">
+            Designed to make solving user computing problems convenient and safe:
+          </p>
+          <p class="card-text lang-ar">
+            تهدف لجعل تنفيذ برامج المستخدمين سهلاً، ملائماً وآمناً:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>User Interface (UI):</strong> CLI (Command-Line Interface / Shell), Batch, and GUI (Graphical User Interface) / Touchscreen.</span>
+              <span class="lang-ar"><strong>واجهة المستخدم:</strong> سطر الأوامر (CLI/Shell)، المعالجة الدفعية (Batch)، والواجهات الرسومية واللمسية (GUI).</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Program Execution:</strong> Ability to load a program into memory, run it, and terminate execution normally or abnormally (error).</span>
+              <span class="lang-ar"><strong>تنفيذ البرامج:</strong> تحميل البرنامج للذاكرة وتشغيله وإنهاؤه بشكل طبيعي أو عند حدوث خطأ.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>I/O Operations:</strong> Facilitating reading/writing to devices and files since users cannot directly touch I/O hardware.</span>
+              <span class="lang-ar"><strong>عمليات الإدخال/الإخراج:</strong> توفير الوصول للملفات والأجهزة الطرفية دون احتكاك مباشر بالعتاد.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>File-System Manipulation:</strong> Reading, writing, creating, deleting, searching files, and directory management.</span>
+              <span class="lang-ar"><strong>معالجة نظام الملفات:</strong> القراءة، الكتابة، الحذف، إنشاء الأدلة، وإدارة الصلاحيات.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Communications & Error Detection:</strong> Exchanging messages across processes (Shared Memory or Message Passing) and detecting CPU/memory/I/O hardware or software faults.</span>
+              <span class="lang-ar"><strong>الاتصالات واكتشاف الأخطاء:</strong> تبادل البيانات بين العمليات (ذاكرة مشتركة أو تمرير رسائل) ورصد أخطاء العتاد والبرمجيات باستمرار.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>⚡</span>
+            <span class="lang-en">Functions for System Efficiency</span>
+            <span class="lang-ar">وظائف لضمان كفاءة تشغيل النظام نفسه</span>
+          </h4>
+          <p class="card-text lang-en">
+            These services exist to optimize hardware utilization and ensure fair sharing among multiple users/processes:
+          </p>
+          <p class="card-text lang-ar">
+            وظائف داخلية تهدف لتعظيم استغلال الموارد والعدالة بين العمليات والمستخدمين:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Resource Allocation:</strong> Distributing CPU cycles, main memory, file storage, and I/O devices among concurrent processes.</span>
+              <span class="lang-ar"><strong>توزيع الموارد (Resource Allocation):</strong> إدارة وتخصيص دورات المعالج، الذاكرة، وسائط التخزين والأجهزة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Accounting:</strong> Tracking and logging which users/processes consume how much and what types of computer resources.</span>
+              <span class="lang-ar"><strong>المحاسبة والإحصاء (Accounting):</strong> تسجيل استهلاك المستخدمين والعمليات للموارد المختلفة ومراقبتها.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Protection and Security:</strong> Ensuring all access to system resources is controlled and protecting data against unauthorized internal/external access.</span>
+              <span class="lang-ar"><strong>الحماية والأمن (Protection & Security):</strong> التحكم في الوصول لكافة موارد النظام وحمايته من التداخلات غير المصرح بها داخلياً وخارجياً.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- EXAM TIP CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Past Exam True/False Trap: Classification of OS Services</span>
+            <span class="callout-title lang-ar">فخ امتحاني خبيث (تصنيف خدمات نظام التشغيل)</span>
+            <span class="exam-badge">Midterm 2019 Q1.6</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Midterm 2019 Q1.6:</strong> <em>"Program execution and resource allocation are example of operating-system services provides functions that are helpful to the user."</em> ➔ <strong>FALSE!</strong><br>
+            <strong>Explanation:</strong> While <em>Program Execution</em> is indeed helpful to the user, <em>Resource Allocation</em> belongs to the second category: functions that ensure the efficient operation of the system itself!
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>سؤال ميدتيرم 2019:</strong> <em>"تنفيذ البرامج وتوزيع الموارد كلاهما أمثلة على خدمات نظام التشغيل المفيدة للمستخدم."</em> ➔ <strong>خطأ (False)!</strong><br>
+            <strong>التعليل:</strong> تنفيذ البرامج (Program execution) يخدم المستخدم فعلاً، أما توزيع الموارد (Resource allocation) فهو وظيفة داخلية هدفها <em>كفاءة تشغيل النظام نفسه</em> واقتسام الموارد، وليس مساعدة المستخدم بشكل مباشر.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: SYSTEM CALLS & API -->
+    <section class="content-section" id="section2">
+      <div class="section-header">
+        <div class="section-number">2</div>
+        <h3 class="section-title lang-en">System Calls & Application Programming Interfaces (APIs)</h3>
+        <h3 class="section-title lang-ar">استدعاءات النظام (System Calls) وواجهات البرمجة (APIs)</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🔌</span>
+            <span class="lang-en">What are System Calls?</span>
+            <span class="lang-ar">ما هو استدعاء النظام (System Call)؟</span>
+          </h4>
+          <p class="card-text lang-en">
+            <strong>System Calls</strong> provide the programming interface to the services provided by an operating system.
+          </p>
+          <p class="card-text lang-ar">
+            <strong>استدعاءات النظام (System Calls)</strong> هي الواجهة البرمجية (Programming Interface) الأساسية للوصول إلى الخدمات التي تقدمها نواة نظام التشغيل.
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en">Typically written in C or C++, though certain low-level hardware routines may involve assembly code.</span>
+              <span class="lang-ar">تُكتب عادةً بلغة C أو C++، مع بعض أجزاء التخاطب المنخفض بلغة التجميع (Assembly).</span>
+            </li>
+            <li>
+              <span class="lang-en">Programs almost never invoke system calls directly; instead, application developers write code using a high-level <strong>Application Programming Interface (API)</strong>.</span>
+              <span class="lang-ar">نادراً ما تستدعي البرامج استدعاء النظام مباشرة؛ بل يستخدم المطورون واجهات برمجية عالية المستوى <strong>(APIs)</strong>.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🌐</span>
+            <span class="lang-en">The 3 Dominant APIs</span>
+            <span class="lang-ar">واجهات التطبيقات البرمجية الثلاث الأشهر</span>
+          </h4>
+          <p class="card-text lang-en">
+            Why prefer standard APIs over direct raw system calls?
+          </p>
+          <p class="card-text lang-ar">
+            لماذا نفضل استخدام الـ API على استدعاءات النظام الخام مباشرة؟
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>1. Win32 API:</strong> For Microsoft Windows environments.</span>
+              <span class="lang-ar"><strong>1. Win32 API:</strong> مخصصة لبيئات نظام تشغيل Windows.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>2. POSIX API:</strong> For POSIX-based systems (Linux, UNIX, and macOS). Ensures source code portability.</span>
+              <span class="lang-ar"><strong>2. POSIX API:</strong> للأنظمة المتوافقة مع معيار POSIX (مثل Linux و UNIX و Mac OS X).</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>3. Java API:</strong> For programs executing in the Java Virtual Machine (JVM).</span>
+              <span class="lang-ar"><strong>3. Java API:</strong> للبرامج التي تعمل داخل آلة جافا الافتراضية (JVM).</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Key Benefit: Program Portability:</strong> An application written using the POSIX API can compile and execute across diverse POSIX operating systems without rewriting low-level kernel system calls.</span>
+              <span class="lang-ar"><strong>الفائدة الكبرى: قابلية النقل (Portability):</strong> الكود المكتوب لمعيار POSIX يعمل ويُترجم عبر مختلف توزيعات Unix و Linux دون تعديل استدعاءات النواة.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- HARD CONCEPT BREAKDOWN: SYSTEM CALL DISPATCH FLOW -->
+      <div class="callout callout-hard">
+        <div class="callout-icon">💡</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Hard Concept Breakdown: The Complete System Call Execution Flow</span>
+            <span class="callout-title lang-ar">تبسيط مفهوم معقد: مسار تنفيذ استدعاء النظام من البداية للنهاية</span>
+          </div>
+          <p class="callout-body lang-en">
+            How does a simple user call like <code>printf()</code> or <code>read()</code> execute safely inside the OS kernel?
+          </p>
+          <p class="callout-body lang-ar">
+            كيف ينتقل استدعاء بسيط مثل <code>printf()</code> أو <code>read()</code> للتنفيذ الآمن داخل النواة؟
+          </p>
+
+          <div class="steps-container">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-text">
+                <h4 class="lang-en">User Application Invokes API Function</h4>
+                <h4 class="lang-ar">التطبيق يستدعي دالة المكتبة / API</h4>
+                <p class="lang-en">User program calls a standard C library function (e.g., <code>printf()</code>), which internally invokes the corresponding system call wrapper (e.g., <code>write()</code>).</p>
+                <p class="lang-ar">يستدعي التطبيق دالة قياسية (مثل <code>printf()</code>) والتي بدورها تطلب تغليف استدعاء النظام (مثل <code>write()</code>).</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-text">
+                <h4 class="lang-en">System Call Interface & Number Mapping</h4>
+                <h4 class="lang-ar">واجهة استدعاء النظام ورقم الاستدعاء</h4>
+                <p class="lang-en">Each system call has a unique assigned integer number. The system-call interface places this number in a designated CPU register (e.g., <code>EAX</code> / <code>RAX</code>).</p>
+                <p class="lang-ar">يرتبط كل استدعاء برقم فريد، وتضع واجهة النظام هذا الرقم في مسجل مخصص بالمعالج (مثل <code>RAX</code>).</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-text">
+                <h4 class="lang-en">Software Trap to Kernel Mode</h4>
+                <h4 class="lang-ar">المصيدة البرمجية (Trap) والتحول لوضع النواة</h4>
+                <p class="lang-en">The program executes a software interrupt or trap instruction (e.g., <code>sysenter</code>, <code>syscall</code>, or <code>int 0x80</code>). Hardware changes the Mode Bit from 1 (User) to 0 (Kernel).</p>
+                <p class="lang-ar">يتم تنفيذ أمر مصيدة برمجية (مثل <code>syscall</code>)، فيقوم العتاد بتغيير بت الوضع فوراً من 1 (مستخدم) إلى 0 (نواة).</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-text">
+                <h4 class="lang-en">Kernel Dispatch Table Lookup & Return</h4>
+                <h4 class="lang-ar">البحث في جدول النواة والتنفيذ والعودة</h4>
+                <p class="lang-en">The kernel indexes into the System Call Table using the call number, executes the kernel service code, saves the return value, resets the Mode Bit to 1 (User), and returns control to user code.</p>
+                <p class="lang-ar">تبحث النواة في جدول الاستدعاءات برقم الاستدعاء وتنفذ كود الخدمة، ثم تحفظ ناتج العودة وتُعيد بت الوضع إلى 1 ليعود التحكم للبرنامج.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: PARAMETER PASSING (TOP EXAM TOPIC) -->
+    <section class="content-section" id="section3">
+      <div class="section-header">
+        <div class="section-number">3</div>
+        <h3 class="section-title lang-en">The Three Methods of Passing System Call Parameters</h3>
+        <h3 class="section-title lang-ar">الطرق الثلاث لتمرير المعاملات لاستدعاءات النظام (سؤال الامتحان الأهم)</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>1️⃣</span>
+            <span class="lang-en">Method 1: Pass in Registers</span>
+            <span class="lang-ar">الطريقة الأولى: التمرير في المسجلات (Registers)</span>
+          </h4>
+          <p class="card-text lang-en">
+            Parameters are written directly into CPU general-purpose registers before executing the trap instruction.
+          </p>
+          <p class="card-text lang-ar">
+            تُكتب المعاملات مباشرة داخل مسجلات المعالج العامة قبل إطلاق أمر المقاطعة البرمجية.
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Advantage:</strong> Fastest and simplest method; no memory accesses required.</span>
+              <span class="lang-ar"><strong>الميزة:</strong> أسرع وأبسط الطرق، ولا تحتاج لقراءة أو كتابة في الذاكرة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Limitation:</strong> In many cases, there may be more parameters than available CPU registers.</span>
+              <span class="lang-ar"><strong>العيب:</strong> محدودة بعدد المسجلات الفيزيائية؛ تفشل إذا كان عدد المعاملات كبيراً.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>2️⃣</span>
+            <span class="lang-en">Method 2: Block / Table in Memory</span>
+            <span class="lang-ar">الطريقة الثانية: كتلة بيانات أو جدول في الذاكرة</span>
+          </h4>
+          <p class="card-text lang-en">
+            Parameters are placed in a memory block/table, and the <strong>starting memory address</strong> of that block is passed as a parameter in a single register.
+          </p>
+          <p class="card-text lang-ar">
+            تُخزن جميع المعاملات في كتلة أو جدول داخل الذاكرة (RAM)، ويُمرر <strong>عنوان بداية الكتلة</strong> في مسجل واحد فقط للمعالج.
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Advantage:</strong> Does not limit the number or size of parameters being passed.</span>
+              <span class="lang-ar"><strong>الميزة:</strong> لا توجد أي قيود على عدد أو حجم المعاملات الممررة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Real-World Use:</strong> Standard approach adopted by <strong>Linux and Solaris</strong>.</span>
+              <span class="lang-ar"><strong>الاستخدام العملي:</strong> هو النهج المعتمد في أنظمة <strong>Linux و Solaris</strong>.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>3️⃣</span>
+            <span class="lang-en">Method 3: Pushed onto the Stack</span>
+            <span class="lang-ar">الطريقة الثالثة: التمرير عبر مكدس البرنامج (Stack)</span>
+          </h4>
+          <p class="card-text lang-en">
+            Parameters are pushed onto the program stack by the user program, and popped off the stack by the operating system kernel.
+          </p>
+          <p class="card-text lang-ar">
+            يقوم برنامج المستخدم بدفع (Push) المعاملات إلى مكدس البرنامج، وتقوم النواة بسحبها (Pop) من المكدس.
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Advantage:</strong> Also does not limit the number or length of parameters. Clean stack-frame alignment.</span>
+              <span class="lang-ar"><strong>الميزة:</strong> لا يضع حداً لعدد المعاملات، وينسجم مع معايير استدعاء الدوال التقليدية.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Past Exam Note:</strong> Directly validates Midterm 2014 Q1.5: <em>"The program stack can be used to pass a system call parameters..."</em> (TRUE).</span>
+              <span class="lang-ar"><strong>ملحوظة امتحانية:</strong> يؤكد صحة سؤال ميدتيرم 2014: <em>"يمكن استخدام مكدس البرنامج لتمرير معاملات الاستدعاء"</em> (صواب).</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- EXAM SPOTLIGHT CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Exam Alert: Highest-Yield Essay Question in Course History</span>
+            <span class="callout-title lang-ar">تنبيه امتحاني: السؤال المقالي الأكثر تكراراً في تاريخ المقرر</span>
+            <span class="exam-badge">Midterms 2014, 2019 & 2021 (3 Marks)</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Question:</strong> <em>"Describe the three methods for passing parameters needed by system calls."</em><br>
+            <strong>Standard Model Answer for Full Marks (Dr. Khaled Wassif):</strong><br>
+            <strong>a. Pass parameters in registers:</strong> Simplest method, but limited if there are more parameters than registers.<br>
+            <strong>b. Block/Table method:</strong> Parameters are stored in a block/table in memory, and the starting address of the block is passed as a parameter in a register (Used by Linux & Solaris).<br>
+            <strong>c. Stack method:</strong> Parameters can be placed, or pushed, onto the stack by the program, and popped off the stack by the operating system.<br>
+            <em>(Note: Methods b and c do not limit the number or length of parameters).</em>
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>نص السؤال:</strong> <em>"اذكر واشرح الطرق الثلاث لتمرير المعاملات التي تحتاجها استدعاءات النظام."</em><br>
+            <strong>الإجابة النموذجية للدرجة الكاملة (من نموذج إجابة د. خالد وصيف):</strong><br>
+            <strong>أ) التمرير في المسجلات (Registers):</strong> الأبسط، لكنه يعجز إذا زاد عدد المعاملات عن المسجلات المتاحة.<br>
+            <strong>ب) التمرير عبر جدول/كتلة بالذاكرة (Block or Table in Memory):</strong> تُخزن المعاملات في الذاكرة، ويُمرر عنوان بداية الكتلة في مسجل واحد (مطبق في Linux و Solaris).<br>
+            <strong>ج) التمرير عبر المكدس (Stack):</strong> يدفع البرنامج المعاملات في المكدس (Push)، وتسحبها النواة (Pop).<br>
+            <em>(ملحوظة: الطريقتان ب و ج لا تضعان قيوداً على عدد أو حجم المعاملات الممررة).</em>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: DESIGN PRINCIPLE: POLICY VS MECHANISM -->
+    <section class="content-section" id="section4">
+      <div class="section-header">
+        <div class="section-number">4</div>
+        <h3 class="section-title lang-en">OS Design Principle: Policy vs. Mechanism</h3>
+        <h3 class="section-title lang-ar">المبدأ التصميمي الأهم: الفصل بين السياسة والآلية</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>⚙️</span>
+            <span class="lang-en">Mechanism: "How to do something"</span>
+            <span class="lang-ar">الآلية (Mechanism): "كيف ننجز العمل؟"</span>
+          </h4>
+          <p class="card-text lang-en">
+            The fundamental construct or tool provided by the operating system to perform an action.
+          </p>
+          <p class="card-text lang-ar">
+            الأداة أو البنية البرمجية الأساسية التي يوفرها نظام التشغيل لأداء مهمة معينة.
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Example:</strong> The CPU timer hardware mechanism that triggers an interrupt every fixed duration, or the context switch mechanism that saves/restores PCB registers.</span>
+              <span class="lang-ar"><strong>مثال:</strong> عتاد مؤقت المعالج (Timer) الذي يطلق مقاطعة بعد زمن محدد، أو آلية تبديل السياق (Context switch) لحفظ واسترجاع المسجلات.</span>
+            </li>
+            <li>
+              <span class="lang-en">Mechanisms tend to remain stable over long periods and do not change with user preferences.</span>
+              <span class="lang-ar">الآليات تتسم بالثبات والاستقرار الطويل ولا تتغير بتغير رغبات المستخدمين.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>📜</span>
+            <span class="lang-en">Policy: "What will be done"</span>
+            <span class="lang-ar">السياسة (Policy): "ما الذي يجب فعله؟"</span>
+          </h4>
+          <p class="card-text lang-en">
+            The decision-making rule that determines how the mechanism is configured and utilized.
+          </p>
+          <p class="card-text lang-ar">
+            القاعدة الإدارية أو القرار الذي يحدد كيفية استخدام تلك الآلية وتوجيهها.
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Example:</strong> Deciding which process gets the CPU next (e.g., FCFS, Priority, or Round Robin) or deciding how long the time slice should be.</span>
+              <span class="lang-ar"><strong>مثال:</strong> تحديد أي عملية ستأخذ المعالج تالياً (هل هي الأعلى أولوية أم الأسبق وصولاً؟) وتحديد طول الشريحة الزمنية.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>The Separation Principle:</strong> Separating policy from mechanism provides <strong>maximum flexibility</strong>. Policies can be modified dynamically or tailored per site without rewriting low-level kernel code.</span>
+              <span class="lang-ar"><strong>مبدأ الفصل:</strong> الفصل التام بينهما يمنح <strong>أقصى قدر من المرونة</strong>؛ إذ يمكن تغيير القواعد دون الحاجة لإعادة كتابة كود النواة التحتي.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- COMPARISON TABLE: POLICY VS MECHANISM -->
+      <div class="table-responsive">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th class="lang-en">Dimension</th>
+              <th class="lang-ar">وجه المقارنة</th>
+              <th class="lang-en">Mechanism (الآلية)</th>
+              <th class="lang-ar">الآلية (Mechanism)</th>
+              <th class="lang-en">Policy (السياسة)</th>
+              <th class="lang-ar">السياسة (Policy)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="lang-en"><strong>Definition Question</strong></td>
+              <td class="lang-ar"><strong>السؤال الأساسي</strong></td>
+              <td class="lang-en"><strong>How</strong> to do something?</td>
+              <td class="lang-ar"><strong>كيف</strong> ننجز الأمر؟</td>
+              <td class="lang-en"><strong>What</strong> will be done?</td>
+              <td class="lang-ar"><strong>ماذا</strong> سنقرر ونفعل؟</td>
+            </tr>
+            <tr>
+              <td class="lang-en"><strong>Rate of Change</strong></td>
+              <td class="lang-ar"><strong>معدل التغير عبر الزمن</strong></td>
+              <td class="lang-en">Rarely changes; built into core OS foundation.</td>
+              <td class="lang-ar">نادرة التغير وثابتة مع الزمن.</td>
+              <td class="lang-en">Changes frequently across environments and workloads.</td>
+              <td class="lang-ar">شديدة التغير بين بيئة عمل وأخرى ومع مرور الوقت.</td>
+            </tr>
+            <tr>
+              <td class="lang-en"><strong>Concrete Example</strong></td>
+              <td class="lang-ar"><strong>مثال تطبيقي</strong></td>
+              <td class="lang-en">Timer hardware interrupt construct.</td>
+              <td class="lang-ar">بنية المقاطعة الناتجة عن مؤقت العتاد.</td>
+              <td class="lang-en">Giving each user job 10 milliseconds of CPU time.</td>
+              <td class="lang-ar">تخصيص 10 ميلي ثانية لكل عملية مستخدم.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- EXAM TIP CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Midterm 2021 MCQ Spotlight: Policy Definition</span>
+            <span class="callout-title lang-ar">سؤال اختيار من متعدد في ميدتيرم 2021</span>
+            <span class="exam-badge">Midterm 2021 Q1.4</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Midterm 2021 Q1.4:</strong> <em>"Policy _____ :<br>
+            a. determines how to do something<br>
+            b. determines what will be done<br>
+            c. is not likely to change across places<br>
+            d. is not likely to change over time"</em><br>
+            ➔ <strong>Correct Answer: (b) determines what will be done</strong>.
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>نص سؤال ميدتيرم 2021:</strong> <em>"السياسة (Policy) _____ :<br>
+            أ. تحدد كيفية إنجاز شيء ما<br>
+            ب. تحدد ما سيتم إنجازه (determines what will be done)<br>
+            ج. غير محتملة التغير بين الأماكن<br>
+            د. غير محتملة التغير بمرور الوقت"</em><br>
+            ➔ <strong>الإجابة الصحيحة: (ب)</strong>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: OPERATING SYSTEM STRUCTURES -->
+    <section class="content-section" id="section5">
+      <div class="section-header">
+        <div class="section-number">5</div>
+        <h3 class="section-title lang-en">Operating System Structures: Monolithic, Layered & Microkernels</h3>
+        <h3 class="section-title lang-ar">هياكل أنظمة التشغيل: الأحادية، الطبقية، والميكروكنل</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🏛️</span>
+            <span class="lang-en">Monolithic & Layered Systems</span>
+            <span class="lang-ar">الأنظمة الأحادية (Monolithic) والطبقية (Layered)</span>
+          </h4>
+          <p class="card-text lang-en">
+            Classical structural paradigms:
+          </p>
+          <p class="card-text lang-ar">
+            النماذج الكلاسيكية لهيكلة النواة:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Monolithic Structure (Original UNIX):</strong> Everything below the system call interface and above physical hardware is packed into the kernel (file system, CPU scheduling, memory management). <em>Fast execution</em> because everything resides in the same address space, but difficult to debug and modify.</span>
+              <span class="lang-ar"><strong>الهيكل الأحادي (Monolithic):</strong> تُوضع جميع الخدمات الحيوية (إدارة الملفات، الجدولة، الذاكرة) داخل النواة مباشرة في مساحة عنوان واحدة. سريعة جداً لكن خطأ واحد قد يُسقط النظام بأكمله.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Layered Approach:</strong> OS is divided into $N$ layers built on top of each other. Layer 0 is hardware; Layer $N$ is user interface. Each layer uses functions and services of <strong>only lower-level layers</strong>. Simplifies debugging and verification, but difficult to define layers cleanly without performance overhead.</span>
+              <span class="lang-ar"><strong>النهج الطبقي (Layered):</strong> يُقسم النظام لطبقات من 0 (العتاد) إلى $N$ (الواجهة). كل طبقة تعتمد حصرياً على الطبقات التي تحتها. يسهل تتبع الأخطاء لكنه يعاني من بطء تراكم الطبقات.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🔬</span>
+            <span class="lang-en">Microkernel System Structure (Mach, QNX)</span>
+            <span class="lang-ar">هيكل النواة الدقيقة (Microkernel)</span>
+          </h4>
+          <p class="card-text lang-en">
+            Radical design: Moves as much functionality as possible from the kernel into <strong>User Space</strong>!
+          </p>
+          <p class="card-text lang-ar">
+            تصميم ثوري: نقل أكبر قدر ممكن من الخدمات خارج النواة إلى <strong>مساحة المستخدم (User Space)</strong>!
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Kernel Minimalism:</strong> Kernel retains only absolute bare essentials: minimal process and memory management, plus a communication facility.</span>
+              <span class="lang-ar"><strong>نواة مصغرة:</strong> تحتفظ النواة بالحد الأدنى المطلق: إدارة مبسطة للذاكرة والعمليات، مع قناة اتصال.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Communication:</strong> User modules (file system, device drivers) communicate with each other using <strong>Message Passing</strong> via the microkernel!</span>
+              <span class="lang-ar"><strong>طريقة التواصل:</strong> تتواصل وحدات المستخدم (نظام الملفات، تعريفات الأجهزة) مع بعضها عبر <strong>تمرير الرسائل (Message Passing)</strong> من خلال الميكروكنل!</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Benefits:</strong> Easier to extend, easier to port to new CPUs, vastly more reliable (less code in kernel mode), and more secure.</span>
+              <span class="lang-ar"><strong>المزايا:</strong> سهولة التوسيع، سهولة النقل لعتاد جديد، واعتمادية وأمان أعلى (أي عطل في تعريف جهاز لا يُسقط النواة).</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Detriment:</strong> Performance overhead caused by constant user-to-kernel mode context switching during message passing.</span>
+              <span class="lang-ar"><strong>العيب الأكبر:</strong> انخفاض الأداء بسبب كثرة التبديل بين وضع المستخدم ووضع النواة لنقل الرسائل.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- COMPARISON TABLE: ARCHITECTURES -->
+      <h4 style="margin: 1.5rem 0 0.5rem; font-size: 1.15rem; color: var(--text-primary);" class="lang-en">Kernel Architectures Compared</h4>
+      <h4 style="margin: 1.5rem 0 0.5rem; font-size: 1.15rem; color: var(--text-primary);" class="lang-ar">مقارنة شاملة بين بنيات الأنوية المختلفة</h4>
+
+      <div class="table-responsive">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th class="lang-en">Architecture</th>
+              <th class="lang-ar">معمارية النواة</th>
+              <th class="lang-en">Services in Kernel Mode</th>
+              <th class="lang-ar">الخدمات داخل وضع النواة</th>
+              <th class="lang-en">Inter-Service Communication</th>
+              <th class="lang-ar">التواصل الداخلي</th>
+              <th class="lang-en">Primary Advantage</th>
+              <th class="lang-ar">الميزة الأساسية</th>
+              <th class="lang-en">Primary Tradeoff</th>
+              <th class="lang-ar">العيب الجوهري</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Monolithic (الأحادية)</strong></td>
+              <td class="lang-en">Everything (VFS, IPC, Drivers, Scheduler, Memory).</td>
+              <td class="lang-ar">كل شيء (الملفات، الشبكات، التعريفات، الذاكرة).</td>
+              <td class="lang-en">Direct function calls in memory.</td>
+              <td class="lang-ar">استدعاءات دوال مباشرة في الذاكرة.</td>
+              <td class="lang-en">Maximum execution speed and efficiency.</td>
+              <td class="lang-ar">سرعة تنفيذ قصوى وأداء عالٍ جداً.</td>
+              <td class="lang-en">A crash in one driver crashes entire OS.</td>
+              <td class="lang-ar">أي خطأ في تعريف جهاز يسقط النظام كاملاً.</td>
+            </tr>
+            <tr>
+              <td><strong>Microkernel (الدقيقة)</strong></td>
+              <td class="lang-en">Bare minimum (IPC, low-level scheduling, memory).</td>
+              <td class="lang-ar">الحد الأدنى فقط (الاتصال، جدولة منخفضة).</td>
+              <td class="lang-en"><strong>Message Passing</strong> between user services.</td>
+              <td class="lang-ar"><strong>تمرير الرسائل (Message Passing)</strong>.</td>
+              <td class="lang-en">High reliability, fault isolation, modularity.</td>
+              <td class="lang-ar">اعتمادية وأمان وعزل للأعطال.</td>
+              <td class="lang-en">Performance overhead from context switches.</td>
+              <td class="lang-ar">هدر في الأداء بسبب كثرة التبديل السياقي.</td>
+            </tr>
+            <tr>
+              <td><strong>Modules (LKM) (الوحدات)</strong></td>
+              <td class="lang-en">Core kernel dynamically loads modules into kernel space.</td>
+              <td class="lang-ar">نواة أساسية تحمل الوحدات ديناميكياً في مساحتها.</td>
+              <td class="lang-en">Known interface calls in kernel space.</td>
+              <td class="lang-ar">استدعاء واجهات محددة داخل النواة.</td>
+              <td class="lang-en">Dynamic flexibility without full reboot (Linux/Solaris).</td>
+              <td class="lang-ar">مرونة ديناميكية دون إعادة تشغيل الجهاز.</td>
+              <td class="lang-en">Buggy module still runs in kernel mode.</td>
+              <td class="lang-ar">الوحدة المعطوبة ما زالت تعمل بوضع النواة.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- EXAM TIP CALLOUT -->
+      <div class="callout callout-exam">
+        <div class="callout-icon">📌</div>
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="callout-title lang-en">Midterm 2021 Exam Spotlight: Microkernel Communication</span>
+            <span class="callout-title lang-ar">سؤال امتحان مباشر: وسيلة الاتصال في الميكروكنل</span>
+            <span class="exam-badge">Midterm 2021 Q1.2</span>
+          </div>
+          <p class="callout-body lang-en">
+            <strong>Midterm 2021 Q1.2:</strong> <em>"Microkernels use _____ for communication.<br>
+            a) message passing<br>
+            b. shared memory<br>
+            c. system calls"</em><br>
+            ➔ <strong>Correct Answer: (a) message passing</strong>!
+          </p>
+          <p class="callout-body lang-ar">
+            <strong>ميدتيرم 2021 سؤال 1.2:</strong> <em>"تعتمد أنظمة الميكروكنل على _____ كوسيلة للتواصل بين وحداتها:<br>
+            أ) تمرير الرسائل (message passing)<br>
+            ب) الذاكرة المشتركة (shared memory)<br>
+            ج) استدعاءات النظام (system calls)"</em><br>
+            ➔ <strong>الإجابة الصحيحة: (أ) تمرير الرسائل (Message Passing)</strong>!
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: SYSTEM BOOT & HYBRID SYSTEMS -->
+    <section class="content-section" id="section6">
+      <div class="section-header">
+        <div class="section-number">6</div>
+        <h3 class="section-title lang-en">System Boot, Mobile Architectures & System Programs</h3>
+        <h3 class="section-title lang-ar">إقلاع النظام، أنظمة الهواتف المحمولة والبرمجيات الخدمية</h3>
+      </div>
+
+      <div class="cards-grid">
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>🚀</span>
+            <span class="lang-en">System Boot Sequence</span>
+            <span class="lang-ar">تسلسل إقلاع النظام (System Boot)</span>
+          </h4>
+          <p class="card-text lang-en">
+            How the computer transitions from cold power to a functioning operating system:
+          </p>
+          <p class="card-text lang-ar">
+            كيف ينتقل الحاسوب من حالة انقطاع الطاقة إلى نظام تشغيل كامل يعمل:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Reset Vector:</strong> Execution begins at a hardcoded, fixed memory address in firmware ROM/EEPROM when power is applied.</span>
+              <span class="lang-ar"><strong>عنوان البدء الثابت:</strong> يبدأ تنفيذ أول تعليمة من عنوان ذاكرة ثابت ومحدد مسبقاً في ذاكرة ROM.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Two-Step Booting:</strong> ROM firmware code is kept very small. It loads the <strong>Boot Block</strong> from a fixed disk sector, which then loads the full <strong>Bootstrap Loader (e.g., GRUB)</strong> into RAM.</span>
+              <span class="lang-ar"><strong>الإقلاع ثنائي المراحل:</strong> كود الـ ROM صغير جداً؛ يقرأ <strong>كتلة الإقلاع (Boot Block)</strong> من القرص، والتي بدورها تُحمّل برنامج الإقلاع الكامل (مثل GRUB).</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Kernel Initialization:</strong> The bootstrap loader loads the OS kernel image into RAM, initializes memory and processes, mounts the root filesystem, and launches initial system background daemons.</span>
+              <span class="lang-ar"><strong>تهيئة النواة:</strong> يحمل برنامج الإقلاع صورة النواة للذاكرة، ويهيئ الجداول، ويشغل الخدمات الخلفية الأساسية (Daemons).</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4 class="card-title">
+            <span>📱</span>
+            <span class="lang-en">Mobile Systems: iOS vs. Android</span>
+            <span class="lang-ar">أنظمة الهواتف المحمولة: iOS مقابل Android</span>
+          </h4>
+          <p class="card-text lang-en">
+            Modern layered/hybrid mobile operating systems:
+          </p>
+          <p class="card-text lang-ar">
+            الهياكل الهجينة والطبقية لأنظمة الهواتف المعاصرة:
+          </p>
+          <ul class="card-list">
+            <li>
+              <span class="lang-en"><strong>Apple iOS:</strong> Built on Mac OS X kernel (Darwin). Layers from top to bottom: Cocoa Touch API ➔ Media Layer ➔ Core Services ➔ Core OS. Closed-source, runs natively on ARM.</span>
+              <span class="lang-ar"><strong>Apple iOS:</strong> مبني على نواة Mac OS X. طبقاته: Cocoa Touch ➔ Media ➔ Core Services ➔ Core OS. مغلق المصدر ويعمل على ARM.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Google Android:</strong> Open-source system developed by Open Handset Alliance. Uses a modified <strong>Linux kernel</strong> for hardware abstraction and power management.</span>
+              <span class="lang-ar"><strong>Google Android:</strong> مفتوح المصدر ومبني على <strong>نواة Linux معدلة</strong> لإدارة العتاد وإدارة الطاقة المتقدمة.</span>
+            </li>
+            <li>
+              <span class="lang-en"><strong>Android Runtime (ART / Dalvik VM):</strong> Java source files are compiled to bytecode, then converted into Dalvik executable format optimized for resource-constrained devices.</span>
+              <span class="lang-ar"><strong>بيئة تشغيل أندرويد (Dalvik / ART):</strong> يُترجم كود Java إلى كود Dalvik تنفيذي مخصص للأجهزة محدودة الذاكرة.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 7: KEY TERMS GLOSSARY -->
+    <section class="content-section" id="section7">
+      <div class="section-header">
+        <div class="section-number">7</div>
+        <h3 class="section-title lang-en">Chapter 2 Key Terms & Exam Glossary</h3>
+        <h3 class="section-title lang-ar">قاموس المصطلحات والمفاهيم الأساسية للفصل الثاني</h3>
+      </div>
+
+      <div class="glossary-grid">
+        <div class="term-card">
+          <div class="term-en">System Call</div>
+          <div class="term-ar">استدعاء النظام (System Call)</div>
+          <p class="term-def lang-en">A programmatic interface providing user applications controlled access to operating system kernel services.</p>
+          <p class="term-def lang-ar">الواجهة البرمجية التي تتيح لتطبيقات المستخدم الوصول المنظم لخدمات نواة نظام التشغيل.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Application Programming Interface (API)</div>
+          <div class="term-ar">واجهة برمجة التطبيقات (API)</div>
+          <p class="term-def lang-en">A set of functions and parameters exposed to programmers (Win32, POSIX, Java) ensuring source code portability.</p>
+          <p class="term-def lang-ar">مجموعة الدوال والمعايير التي يتعامل معها المبرمج مباشرة وتضمن سهولة نقل البرامج عبر المنصات.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Microkernel</div>
+          <div class="term-ar">النواة الدقيقة (Microkernel)</div>
+          <p class="term-def lang-en">A kernel structure retaining only minimal services in kernel mode, relying on message passing for user-level modules.</p>
+          <p class="term-def lang-ar">معمارية تجعل النواة في أصغر حجم ممكن، وتعتمد على تمرير الرسائل بين الوحدات العاملة بوضع المستخدم.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Mechanism vs. Policy</div>
+          <div class="term-ar">الآلية مقابل السياسة</div>
+          <p class="term-def lang-en">Mechanisms determine how to do something; policies decide what will be done. Separating them grants maximum design flexibility.</p>
+          <p class="term-def lang-ar">الآليات تحدد "كيف" يتم العمل، بينما السياسات تحدد "ماذا" سنقرر. فصلهما يمنح مرونة برمجية عظمى.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">Loadable Kernel Modules (LKM)</div>
+          <div class="term-ar">وحدات النواة القابلة للتحميل</div>
+          <p class="term-def lang-en">Object-oriented components that can be linked and inserted into the running kernel dynamically as needed without rebooting.</p>
+          <p class="term-def lang-ar">أجزاء برمجية قابلة للربط والتحميل داخل النواة أثناء تشغيلها ديناميكياً ودون الحاجة لإعادة التشغيل.</p>
+        </div>
+
+        <div class="term-card">
+          <div class="term-en">System Programs / Daemons</div>
+          <div class="term-ar">برامج النظام والخدمات الخلفية</div>
+          <p class="term-def lang-en">User-level utilities and background services (daemons) providing a convenient development and administrative environment.</p>
+          <p class="term-def lang-ar">أدوات تعمل في وضع المستخدم وخدمات خلفية تبدأ مع الإقلاع لتقديم بيئة تطوير وإدارة متكاملة.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 8: INTERACTIVE CHAPTER QUIZ -->
+    <section class="quiz-section" id="quiz">
+      <div class="quiz-header">
+        <h3 class="quiz-title lang-en">Interactive Knowledge Check</h3>
+        <h3 class="quiz-title lang-ar">اختبار تقييم المعرفة التفاعلي للفصل الثاني</h3>
+        <p class="quiz-subtitle lang-en">5 High-Yield MCQs curated directly from Cairo University Past Midterms & Quizzes</p>
+        <p class="quiz-subtitle lang-ar">5 أسئلة اختيار من متعدد مستخلصة مباشرة من امتحانات الميدتيرم السابقة</p>
+      </div>
+
+      <form id="quizForm">
+
+        <!-- QUESTION 1 -->
+        <div class="question-block" data-question="1">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 1 of 5</span>
+            <span class="question-badge lang-ar">السؤال 1 من 5</span>
+            <span class="question-exam-tag">Midterm 2014, 2019 & 2021</span>
+          </div>
+          <p class="question-text lang-en">
+            Which method of passing parameters to system calls is utilized by <strong>Linux and Solaris</strong> to avoid being constrained by the physical number of CPU registers?
+          </p>
+          <p class="question-text lang-ar">
+            أي طريقة من طرق تمرير معاملات استدعاءات النظام تعتمد عليها أنظمة <strong>Linux و Solaris</strong> لتفادي التقيد بعدد مسجلات المعالج المحدودة؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q1" value="A">
+              <span class="lang-en">A) Direct DMA transfers between disk sectors and cache memory</span>
+              <span class="lang-ar">أ) النقل المباشر عبر DMA بين قطاعات القرص والذاكرة المخبأة</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q1" value="B">
+              <span class="lang-en">B) Storing parameters in a memory block/table and passing its starting address in a register</span>
+              <span class="lang-ar">ب) تخزين المعاملات في كتلة أو جدول بالذاكرة وتمرير عنوان بداية الكتلة داخل مسجل واحد</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q1" value="C">
+              <span class="lang-en">C) Encoding all parameters strictly inside the CPU Program Counter register</span>
+              <span class="lang-ar">ج) تضمين كافة المعاملات حصرياً داخل مسجل عداد البرنامج (PC)</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q1" value="D">
+              <span class="lang-en">D) Writing parameters directly to firmware ROM chips</span>
+              <span class="lang-ar">د) كتابة المعاملات مباشرة داخل رقاقات الذاكرة الدائمة ROM</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-1"></div>
+        </div>
+
+        <!-- QUESTION 2 -->
+        <div class="question-block" data-question="2">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 2 of 5</span>
+            <span class="question-badge lang-ar">السؤال 2 من 5</span>
+            <span class="question-exam-tag">Midterm 2021 Q1.2</span>
+          </div>
+          <p class="question-text lang-en">
+            In a <strong>Microkernel</strong> architecture, which fundamental mechanism is used for communication between user-level service modules?
+          </p>
+          <p class="question-text lang-ar">
+            في هيكلية <strong>النواة الدقيقة (Microkernel)</strong>، ما هي الآلية الأساسية المستخدمة للتواصل بين وحدات الخدمات العاملة في وضع المستخدم؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q2" value="A">
+              <span class="lang-en">A) Message passing</span>
+              <span class="lang-ar">أ) تمرير الرسائل (Message passing)</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q2" value="B">
+              <span class="lang-en">B) Shared physical memory blocks</span>
+              <span class="lang-ar">ب) كتل الذاكرة الفيزيائية المشتركة (Shared memory)</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q2" value="C">
+              <span class="lang-en">C) Direct hardware interrupt lines</span>
+              <span class="lang-ar">ج) خطوط المقاطعة العتادية المباشرة</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q2" value="D">
+              <span class="lang-en">D) Direct procedure calls bypassing the kernel</span>
+              <span class="lang-ar">د) استدعاءات إجرائية مباشرة تتجاوز النواة كلياً</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-2"></div>
+        </div>
+
+        <!-- QUESTION 3 -->
+        <div class="question-block" data-question="3">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 3 of 5</span>
+            <span class="question-badge lang-ar">السؤال 3 من 5</span>
+            <span class="question-exam-tag">Midterm 2021 Q1.4</span>
+          </div>
+          <p class="question-text lang-en">
+            According to operating-system design principles, <strong>Policy</strong>:
+          </p>
+          <p class="question-text lang-ar">
+            وفقاً للمبادئ الهندسية لتصميم أنظمة التشغيل، فإن <strong>السياسة (Policy)</strong>:
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q3" value="A">
+              <span class="lang-en">A) Determines how to do something</span>
+              <span class="lang-ar">أ) تحدد كيفية إنجاز شيء ما (determines how to do something)</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q3" value="B">
+              <span class="lang-en">B) Determines what will be done</span>
+              <span class="lang-ar">ب) تحدد ما سيتم إنجازه (determines what will be done)</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q3" value="C">
+              <span class="lang-en">C) Is guaranteed to never change over time or across different installations</span>
+              <span class="lang-ar">ج) مضمونة الثبات ولا تتغير نهائياً عبر الزمن أو بين الأجهزة المختلفة</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q3" value="D">
+              <span class="lang-en">D) Must always be permanently hardcoded into silicon hardware circuits</span>
+              <span class="lang-ar">د) يجب تثبيتها برمجياً وعزلها دائماً داخل دارات السيليكون العتادية</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-3"></div>
+        </div>
+
+        <!-- QUESTION 4 -->
+        <div class="question-block" data-question="4">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 4 of 5</span>
+            <span class="question-badge lang-ar">السؤال 4 من 5</span>
+            <span class="question-exam-tag">Midterm 2019 Q1.6</span>
+          </div>
+          <p class="question-text lang-en">
+            Why is the statement <em>"Program execution and resource allocation are examples of operating-system services providing functions that are helpful to the user"</em> considered <strong>False</strong> on midterm exams?
+          </p>
+          <p class="question-text lang-ar">
+            لماذا تُعتبر العبارة <em>"تنفيذ البرامج وتوزيع الموارد كلاهما أمثلة على خدمات نظام التشغيل التي تقدم وظائف مفيدة للمستخدم"</em> عبارة <strong>خاطئة (False)</strong> في الامتحانات؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q4" value="A">
+              <span class="lang-en">A) Because neither program execution nor resource allocation is handled by the operating system</span>
+              <span class="lang-ar">أ) لأن نظام التشغيل لا يتولى تنفيذ البرامج ولا إدارة الموارد أصلاً</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q4" value="B">
+              <span class="lang-en">B) Because resource allocation exists to ensure the efficient operation of the system itself, not user convenience</span>
+              <span class="lang-ar">ب) لأن توزيع الموارد (Resource Allocation) وظيفته ضمان كفاءة تشغيل النظام نفسه واقتسام موارده، وليس خدمة المستخدم</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q4" value="C">
+              <span class="lang-en">C) Because program execution can only be performed by web browsers</span>
+              <span class="lang-ar">ج) لأن تنفيذ البرامج محصور بمتصفحات الويب فقط</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q4" value="D">
+              <span class="lang-en">D) Because resource allocation is only applicable in single-user batch mainframe systems</span>
+              <span class="lang-ar">د) لأن توزيع الموارد ينطبق فقط على الحواسيب العملاقة أحادية المستخدم القديمة</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-4"></div>
+        </div>
+
+        <!-- QUESTION 5 -->
+        <div class="question-block" data-question="5">
+          <div class="question-top">
+            <span class="question-badge lang-en">Question 5 of 5</span>
+            <span class="question-badge lang-ar">السؤال 5 من 5</span>
+            <span class="question-exam-tag">Midterm 2021 Q1.8 & 2014 Q1.9</span>
+          </div>
+          <p class="question-text lang-en">
+            What defines the relationship between <strong>System Calls</strong> and <strong>System Programs</strong>?
+          </p>
+          <p class="question-text lang-ar">
+            ما الذي يحدد العلاقة الدقيقة بين <strong>استدعاءات النظام (System Calls)</strong> و<strong>برامج النظام (System Programs)</strong>؟
+          </p>
+          <div class="options-group">
+            <label class="option-label" data-opt="A">
+              <input type="radio" name="q5" value="A">
+              <span class="lang-en">A) System programs run exclusively in kernel mode, whereas system calls run in user mode</span>
+              <span class="lang-ar">أ) تعمل برامج النظام حصرياً في وضع النواة، بينما تعمل استدعاءات النظام في وضع المستخدم</span>
+            </label>
+            <label class="option-label" data-opt="B">
+              <input type="radio" name="q5" value="B">
+              <span class="lang-en">B) System calls provide the low-level interface to the kernel, while system programs provide a convenient user environment (some being simple interfaces to system calls)</span>
+              <span class="lang-ar">ب) توفر استدعاءات النظام الواجهة المباشرة لخدمات النواة، بينما توفر برامج النظام بيئة مريحة للمستخدم (وبعضها واجهات بسيطة لاستدعاءات النظام)</span>
+            </label>
+            <label class="option-label" data-opt="C">
+              <input type="radio" name="q5" value="C">
+              <span class="lang-en">C) System programs are permanently embedded in BIOS ROM firmware</span>
+              <span class="lang-ar">ج) برامج النظام مدمجة دائماً في رقاقات ذاكرة BIOS الدائمة</span>
+            </label>
+            <label class="option-label" data-opt="D">
+              <input type="radio" name="q5" value="D">
+              <span class="lang-en">D) System calls are launched from the desktop GUI by mouse double-clicks</span>
+              <span class="lang-ar">د) يتم إطلاق استدعاءات النظام بالنقر المزدوج بالفأرة على سطح المكتب</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp-5"></div>
+        </div>
+
+        <!-- Actions -->
+        <div class="quiz-actions">
+          <button type="button" id="submitQuizBtn" class="btn-quiz-submit">
+            <span class="lang-en">Submit Quiz</span>
+            <span class="lang-ar">تسليم الإجابات</span>
+          </button>
+          <button type="button" id="resetQuizBtn" class="btn-quiz-reset">
+            <span class="lang-en">Reset</span>
+            <span class="lang-ar">إعادة الاختبار</span>
+          </button>
+        </div>
+
+      </form>
+
+      <!-- Score Summary Box -->
+      <div id="scoreBox" class="score-summary-box">
+        <div class="score-circle">
+          <span class="score-number" id="scoreNum">0/5</span>
+          <span class="score-percent" id="scorePercent">0%</span>
+        </div>
+        <h4 class="score-status" id="scoreGrade">Excellent!</h4>
+        <p class="score-message" id="scoreFeedback">Detailed evaluation feedback appears here.</p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Page Footer -->
+  <footer class="page-footer">
+    <p class="lang-en">
+      OS MasterStudy &copy; 2026 &bull; Based on Silberschatz Operating System Concepts (9th Ed) & Dr. Khaled Wassif's Lectures & Exams.
+    </p>
+    <p class="lang-ar">
+      دليل أنظمة التشغيل الشامل &copy; 2026 &bull; مستند إلى كتاب سلبرشاتز (Silberschatz 9th Ed) ومحاضرات وامتحانات د. خالد وصيف (كلية الحاسبات والذكاء الاصطناعي).
+    </p>
+  </footer>
+
+  <!-- Interactive JavaScript Engine -->
+  <script>
+    (function() {
+      const QUIZ_DATA = {
+        q1: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> In Linux and Solaris, when there are multiple parameters or large structures, the parameters are stored in a block/table in memory, and the memory address of that block is passed in a register. This circumvents physical CPU register limits. (Midterm 2014, 2019, 2021 essay question).',
+          expAr: '<strong>صحيح (ب):</strong> في نظامي Linux و Solaris، تُخزن المعاملات في جدول/كتلة بالذاكرة، ويُمرر عنوان بداية الكتلة في مسجل واحد، مما يمنع الاصطدام بمحدودية عدد مسجلات المعالج (سؤال مقالي متكرر في امتحانات 2014 و2019 و2021).'
+        },
+        q2: {
+          correct: 'A',
+          expEn: '<strong>Correct (A):</strong> Microkernels move almost everything into user space. User modules (such as file systems and device drivers) communicate with one another using <em>message passing</em> via the microkernel. (Midterm 2021 Q1.2 directly).',
+          expAr: '<strong>صحيح (أ):</strong> تعتمد معمارية النواة الدقيقة (Microkernel) على <em>تمرير الرسائل (Message Passing)</em> كوسيلة تواصل أساسية بين الوحدات الخدمية العاملة بوضع المستخدم (ميدتيرم 2021 بنصه).'
+        },
+        q3: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> As defined in Operating System Concepts: Mechanisms determine <em>how</em> to do something; Policies determine <em>what</em> will be done. (Midterm 2021 Q1.4).',
+          expAr: '<strong>صحيح (ب):</strong> وفقاً للمفاهيم القياسية لأنظمة التشغيل: الآلية (Mechanism) تحدد <em>كيف</em> ننجز الشيء، بينما السياسة (Policy) تحدد <em>ماذا</em> سنفعل ونقرر (ورد بنصه في ميدتيرم 2021).'
+        },
+        q4: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> Operating system services are divided into two distinct classes: services helpful to the user (UI, program execution, I/O, files, comms, errors) and services for system efficiency (Resource allocation, accounting, protection/security). (Midterm 2019 Q1.6).',
+          expAr: '<strong>صحيح (ب):</strong> تنقسم خدمات النظام لنوعين: خدمات مفيدة للمستخدم، ووظائف لضمان كفاءة تشغيل النظام نفسه واقتسام الموارد (مثل Resource allocation و Accounting و Security) (سؤال صح/خطأ ميدتيرم 2019).'
+        },
+        q5: {
+          correct: 'B',
+          expEn: '<strong>Correct (B):</strong> System calls provide the programmatic interface to kernel services (Midterm 2021 Q1.8), whereas system programs provide a convenient user environment; some are simply user interfaces to system calls, while others are more complex (Midterm 2014 Q1.9).',
+          expAr: '<strong>صحيح (ب):</strong> استدعاءات النظام تمثل الواجهة البرمجية المباشرة لخدمات النواة (ميدتيرم 2021)، بينما توفر برامج النظام البيئة الملائمة للمستخدم وبعضها واجهات مباشرة لاستدعاءات النظام (ميدتيرم 2014).'
+        }
+      };
+
+      let currentLang = localStorage.getItem('os_guide_lang') || 'en';
+      let currentTheme = localStorage.getItem('os_guide_theme') || 'dark';
+
+      const themeToggleBtn = document.getElementById('themeToggle');
+      const langToggleBtn = document.getElementById('langToggle');
+      const themeIcon = document.getElementById('themeIcon');
+      const submitQuizBtn = document.getElementById('submitQuizBtn');
+      const resetQuizBtn = document.getElementById('resetQuizBtn');
+      const scoreBox = document.getElementById('scoreBox');
+
+      function applyTheme(theme) {
+        currentTheme = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('os_guide_theme', theme);
+        if (theme === 'light') {
+          themeIcon.textContent = '🌙';
+          document.getElementById('themeTextEn').textContent = 'Dark';
+          document.getElementById('themeTextAr').textContent = 'ليلي';
+        } else {
+          themeIcon.textContent = '☀️';
+          document.getElementById('themeTextEn').textContent = 'Light';
+          document.getElementById('themeTextAr').textContent = 'نهاري';
+        }
+      }
+
+      function applyLanguage(lang) {
+        currentLang = lang;
+        document.body.setAttribute('data-lang', lang);
+        document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+        document.documentElement.setAttribute('lang', lang);
+        localStorage.setItem('os_guide_lang', lang);
+
+        Object.keys(QUIZ_DATA).forEach((key, index) => {
+          const expDiv = document.getElementById(`exp-${index + 1}`);
+          if (expDiv && expDiv.classList.contains('show')) {
+            expDiv.innerHTML = lang === 'ar' ? QUIZ_DATA[key].expAr : QUIZ_DATA[key].expEn;
+          }
+        });
+      }
+
+      themeToggleBtn.addEventListener('click', () => {
+        applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+      });
+
+      langToggleBtn.addEventListener('click', () => {
+        applyLanguage(currentLang === 'en' ? 'ar' : 'en');
+      });
+
+      submitQuizBtn.addEventListener('click', () => {
+        let score = 0;
+        const total = Object.keys(QUIZ_DATA).length;
+
+        Object.keys(QUIZ_DATA).forEach((key, index) => {
+          const qIndex = index + 1;
+          const qBlock = document.querySelector(`.question-block[data-question="${qIndex}"]`);
+          const selectedOption = document.querySelector(`input[name="${key}"]:checked`);
+          const expDiv = document.getElementById(`exp-${qIndex}`);
+          const optionLabels = qBlock.querySelectorAll('.option-label');
+
+          optionLabels.forEach(label => {
+            label.classList.remove('is-correct', 'is-wrong');
+          });
+          qBlock.classList.remove('correct-highlight', 'incorrect-highlight');
+
+          const correctVal = QUIZ_DATA[key].correct;
+
+          if (selectedOption) {
+            const userVal = selectedOption.value;
+            if (userVal === correctVal) {
+              score++;
+              qBlock.classList.add('correct-highlight');
+              selectedOption.closest('.option-label').classList.add('is-correct');
+            } else {
+              qBlock.classList.add('incorrect-highlight');
+              selectedOption.closest('.option-label').classList.add('is-wrong');
+              const correctLabel = qBlock.querySelector(`.option-label[data-opt="${correctVal}"]`);
+              if (correctLabel) correctLabel.classList.add('is-correct');
+            }
+          } else {
+            qBlock.classList.add('incorrect-highlight');
+            const correctLabel = qBlock.querySelector(`.option-label[data-opt="${correctVal}"]`);
+            if (correctLabel) correctLabel.classList.add('is-correct');
+          }
+
+          expDiv.className = 'question-explanation show explanation-correct';
+          expDiv.innerHTML = currentLang === 'ar' ? QUIZ_DATA[key].expAr : QUIZ_DATA[key].expEn;
+        });
+
+        const percentage = Math.round((score / total) * 100);
+        document.getElementById('scoreNum').textContent = `${score}/${total}`;
+        document.getElementById('scorePercent').textContent = `${percentage}%`;
+
+        const gradeElem = document.getElementById('scoreGrade');
+        const feedbackElem = document.getElementById('scoreFeedback');
+
+        if (score === 5) {
+          gradeElem.textContent = currentLang === 'ar' ? 'ممتاز جداً! (100%)' : 'Outstanding Master Level! (100%)';
+          gradeElem.style.color = 'var(--accent-emerald)';
+          feedbackElem.textContent = currentLang === 'ar' 
+            ? 'مستوى باهر! لقد أجبت على جميع الأسئلة الامتحانية للفصل الثاني بشكل صحيح تماماً.'
+            : 'Flawless performance! You have mastered all core Chapter 2 concepts and past midterm questions. You are completely prepared for this chapter.';
+        } else if (score >= 3) {
+          gradeElem.textContent = currentLang === 'ar' ? 'أداء جيد جداً!' : 'Good Job! Solid Foundation';
+          gradeElem.style.color = 'var(--accent-cyan)';
+          feedbackElem.textContent = currentLang === 'ar'
+            ? 'أداء جيد جداً. راجع التعليلات الموضحة أسفل الأسئلة لتثبيت الفروق الدقيقة (خاصة طرق تمرير المعاملات وهيكلية الميكروكنل).'
+            : 'Good performance! Review the detailed explanations on the questions you missed to solidify subtle distinctions (e.g., parameter passing and microkernel communication).';
+        } else {
+          gradeElem.textContent = currentLang === 'ar' ? 'يحتاج إلى مراجعة' : 'Needs Review & Practice';
+          gradeElem.style.color = 'var(--accent-rose)';
+          feedbackElem.textContent = currentLang === 'ar'
+            ? 'يوصى بإعادة قراءة صناديق نصائح الامتحانات وجدول مقارنة الأنوية بالأعلى ثم إعادة المحاولة.'
+            : 'We recommend reading through the "Must-Know Exam Tips" and comparison tables above carefully, then retrying the quiz to master these concepts.';
+        }
+
+        scoreBox.classList.add('show');
+        scoreBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+
+      resetQuizBtn.addEventListener('click', () => {
+        document.getElementById('quizForm').reset();
+        document.querySelectorAll('.question-block').forEach(b => {
+          b.classList.remove('correct-highlight', 'incorrect-highlight');
+        });
+        document.querySelectorAll('.option-label').forEach(l => {
+          l.classList.remove('is-correct', 'is-wrong');
+        });
+        document.querySelectorAll('.question-explanation').forEach(e => {
+          e.classList.remove('show');
+          e.innerHTML = '';
+        });
+        scoreBox.classList.remove('show');
+      });
+
+      applyTheme(currentTheme);
+      applyLanguage(currentLang);
+    })();
+  </script>
+</body>
+</html>

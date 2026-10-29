@@ -1,0 +1,2273 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chapter 6: CPU Scheduling | OS MasterStudy</title>
+  <style>
+    :root {
+      --font-en: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      --font-ar: 'Segoe UI', Tahoma, 'Cairo', 'Tajawal', sans-serif;
+      --transition-speed: 0.3s;
+      
+      /* Dark Theme (Default) */
+      --bg-body: #0b0f19;
+      --bg-surface: #111827;
+      --bg-card: #1f2937;
+      --bg-card-hover: #283548;
+      --bg-glass: rgba(17, 24, 39, 0.88);
+      --border-color: #374151;
+      --border-focus: #6366f1;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-primary: #6366f1;
+      --accent-primary-hover: #4f46e5;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --callout-tip-bg: rgba(245, 158, 11, 0.1);
+      --callout-tip-border: #f59e0b;
+      --callout-hard-bg: rgba(99, 102, 241, 0.1);
+      --callout-hard-border: #6366f1;
+      --table-header-bg: #1e293b;
+      --table-zebra-bg: #182234;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="light"] {
+      --bg-body: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --bg-glass: rgba(255, 255, 255, 0.92);
+      --border-color: #e2e8f0;
+      --border-focus: #4f46e5;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --accent-primary: #4f46e5;
+      --accent-primary-hover: #4338ca;
+      --accent-cyan: #0284c7;
+      --accent-emerald: #059669;
+      --accent-amber: #d97706;
+      --accent-rose: #e11d48;
+      --callout-tip-bg: #fffbeb;
+      --callout-tip-border: #d97706;
+      --callout-hard-bg: #eef2ff;
+      --callout-hard-border: #4f46e5;
+      --table-header-bg: #f1f5f9;
+      --table-zebra-bg: #f8fafc;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-en);
+      background-color: var(--bg-body);
+      color: var(--text-primary);
+      line-height: 1.65;
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    [dir="rtl"] body {
+      font-family: var(--font-ar);
+    }
+
+    /* Bilingual Visibility */
+    [data-lang="en"] .lang-ar { display: none !important; }
+    [data-lang="ar"] .lang-en { display: none !important; }
+
+    /* Sticky Navigation Header */
+    .header-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: var(--bg-glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      font-size: 1.1rem;
+      box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+    }
+
+    .logo-text h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .logo-text span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: block;
+    }
+
+    .chapter-links {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      list-style: none;
+    }
+
+    .chapter-link {
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all var(--transition-speed);
+      border: 1px solid transparent;
+    }
+
+    .chapter-link:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-color: var(--border-color);
+    }
+
+    .chapter-link.active {
+      background: var(--accent-primary);
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-toggle {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all var(--transition-speed);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-toggle:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-primary);
+      transform: translateY(-1px);
+    }
+
+    .main-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* Hero Banner */
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(6, 182, 212, 0.08));
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 2.25rem 2rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-banner::after {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, var(--accent-primary) 0%, transparent 70%);
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: var(--accent-primary);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero-title {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      max-width: 800px;
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 0.85rem 1.25rem;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    /* Content Sections */
+    .content-section {
+      margin-bottom: 3rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .section-number {
+      background: var(--accent-primary);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.35rem;
+      transition: all var(--transition-speed);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-card:hover {
+      border-color: var(--accent-primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .card-icon {
+      font-size: 1.25rem;
+    }
+
+    .card-body {
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      line-height: 1.6;
+      flex-grow: 1;
+    }
+
+    .card-body ul, .card-body ol {
+      margin-left: 1.25rem;
+      margin-top: 0.5rem;
+    }
+
+    [dir="rtl"] .card-body ul, [dir="rtl"] .card-body ol {
+      margin-left: 0;
+      margin-right: 1.25rem;
+    }
+
+    .card-body li {
+      margin-bottom: 0.4rem;
+    }
+
+    .badge-tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      margin-right: 0.4rem;
+    }
+
+    [dir="rtl"] .badge-tag {
+      margin-right: 0;
+      margin-left: 0.4rem;
+    }
+
+    .badge-primary { background: rgba(99, 102, 241, 0.15); color: var(--accent-primary); border: 1px solid var(--accent-primary); }
+    .badge-cyan { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+    .badge-emerald { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid var(--accent-emerald); }
+    .badge-amber { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+    .badge-rose { background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); border: 1px solid var(--accent-rose); }
+
+    /* Callouts */
+    .callout-box {
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid;
+    }
+
+    [dir="rtl"] .callout-box {
+      border-left: none;
+      border-right: 4px solid;
+    }
+
+    .callout-box.tip {
+      background: var(--callout-tip-bg);
+      border-color: var(--callout-tip-border);
+    }
+
+    .callout-box.hard {
+      background: var(--callout-hard-bg);
+      border-color: var(--callout-hard-border);
+    }
+
+    .callout-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .callout-tag {
+      background: #f59e0b;
+      color: #000;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .callout-body {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Tables */
+    .table-responsive {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.92rem;
+    }
+
+    [dir="rtl"] .compare-table {
+      text-align: right;
+    }
+
+    .compare-table th {
+      background: var(--table-header-bg);
+      color: var(--text-primary);
+      padding: 0.85rem 1rem;
+      font-weight: 700;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .compare-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    .compare-table tr:nth-child(even) td {
+      background: var(--table-zebra-bg);
+    }
+
+    .compare-table tr:hover td {
+      background: var(--bg-card-hover);
+    }
+
+    /* Steps */
+    .steps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      margin: 1.25rem 0;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+    }
+
+    .step-badge {
+      background: var(--accent-primary);
+      color: white;
+      font-weight: 800;
+      font-size: 0.85rem;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .step-content h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      color: var(--text-primary);
+    }
+
+    .step-content p {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Gantt Visualizer */
+    .gantt-wrapper {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin: 1.25rem 0;
+    }
+
+    .gantt-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: var(--accent-cyan);
+    }
+
+    .gantt-track {
+      display: flex;
+      width: 100%;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .gantt-slot {
+      text-align: center;
+      padding: 0.6rem 0.2rem;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .slot-p1 { background: #3b82f6; }
+    .slot-p2 { background: #10b981; }
+    .slot-p3 { background: #f59e0b; }
+    .slot-p4 { background: #ec4899; }
+    .slot-p5 { background: #8b5cf6; }
+    .slot-cs { background: #64748b; font-size: 0.72rem; }
+
+    .gantt-timeline {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: monospace;
+      padding: 0 0.2rem;
+    }
+
+    /* Code Block */
+    .code-container {
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.88rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+      margin: 1rem 0;
+      direction: ltr;
+      text-align: left;
+    }
+
+    /* Quiz Area */
+    .quiz-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 2.25rem 2rem;
+      margin-top: 3.5rem;
+      box-shadow: var(--shadow-md);
+    }
+
+    .quiz-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .quiz-badge {
+      display: inline-block;
+      background: var(--accent-cyan);
+      color: #000;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 0.25rem 0.8rem;
+      border-radius: 20px;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .quiz-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+    }
+
+    .quiz-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .question-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: border-color var(--transition-speed);
+    }
+
+    .question-block.correct-highlight {
+      border-color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .question-block.incorrect-highlight {
+      border-color: var(--accent-rose);
+      background: rgba(244, 63, 94, 0.05);
+    }
+
+    .question-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .question-badge {
+      background: var(--table-header-bg);
+      color: var(--accent-cyan);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    .question-exam-tag {
+      font-size: 0.75rem;
+      color: var(--accent-amber);
+      font-weight: 600;
+    }
+
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      line-height: 1.4;
+    }
+
+    .options-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .option-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: all var(--transition-speed);
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+    }
+
+    .option-label:hover {
+      border-color: var(--accent-primary);
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .option-label input[type="radio"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--text-muted);
+      border-radius: 50%;
+      outline: none;
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      flex-shrink: 0;
+      transition: all var(--transition-speed);
+    }
+
+    .option-label input[type="radio"]:checked {
+      border-color: var(--accent-primary);
+    }
+
+    .option-label input[type="radio"]::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      transform: scale(0);
+      transition: transform 0.15s ease-in-out;
+    }
+
+    .option-label input[type="radio"]:checked::before {
+      transform: scale(1);
+    }
+
+    .option-label.is-correct {
+      border-color: var(--accent-emerald) !important;
+      background: rgba(16, 185, 129, 0.12) !important;
+      color: var(--accent-emerald) !important;
+      font-weight: 600;
+    }
+
+    .option-label.is-incorrect {
+      border-color: var(--accent-rose) !important;
+      background: rgba(244, 63, 94, 0.12) !important;
+      color: var(--accent-rose) !important;
+    }
+
+    .question-explanation {
+      margin-top: 1rem;
+      padding: 0.85rem 1.1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      display: none;
+    }
+
+    .question-explanation.show {
+      display: block;
+    }
+
+    .explanation-correct {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--accent-emerald);
+      color: var(--text-primary);
+    }
+
+    .quiz-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 2rem;
+    }
+
+    .btn-quiz-submit {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      color: white;
+      border: none;
+      padding: 0.85rem 2.2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .btn-quiz-submit:hover {
+      opacity: 0.92;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.45);
+    }
+
+    .btn-quiz-reset {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 0.85rem 1.8rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+    }
+
+    .btn-quiz-reset:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+      border-color: var(--text-muted);
+    }
+
+    /* Score Box */
+    .score-box {
+      margin-top: 2rem;
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      display: none;
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    .score-box.show {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .score-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--table-header-bg);
+      border: 4px solid var(--accent-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+    }
+
+    .score-number {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      line-height: 1;
+    }
+
+    .score-percent {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .score-status {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .score-message {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .page-footer {
+      border-top: 1px solid var(--border-color);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      background: var(--bg-surface);
+    }
+
+    @media (max-width: 868px) {
+      .nav-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .chapter-links {
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+      }
+      .hero-title {
+        font-size: 1.6rem;
+      }
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body data-lang="en">
+
+  <!-- Sticky Top Header & Navigation -->
+  <header class="header-nav">
+    <div class="nav-container">
+      <a href="chapter1.html" class="logo-area">
+        <div class="logo-icon">OS</div>
+        <div class="logo-text">
+          <h1 class="lang-en">OS MasterStudy</h1>
+          <h1 class="lang-ar">دليل أنظمة التشغيل</h1>
+          <span class="lang-en">BCS241 Course Guide</span>
+          <span class="lang-ar">مقرر BCS241 - د. خالد وصيف</span>
+        </div>
+      </a>
+
+      <!-- Chapter Switcher Links -->
+      <nav>
+        <ul class="chapter-links">
+          <li><a href="chapter1.html" class="chapter-link">Ch 1: Intro</a></li>
+          <li><a href="chapter2.html" class="chapter-link">Ch 2: Structure</a></li>
+          <li><a href="chapter3.html" class="chapter-link">Ch 3: Processes</a></li>
+          <li><a href="chapter5.html" class="chapter-link">Ch 5: Sync</a></li>
+          <li><a href="chapter6.html" class="chapter-link active">Ch 6: Sched</a></li>
+        </ul>
+      </nav>
+
+      <!-- Controls -->
+      <div class="nav-controls">
+        <button id="themeToggle" class="btn-toggle" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+          <span id="themeIcon">☀️</span>
+          <span class="lang-en" id="themeTextEn">Light</span>
+          <span class="lang-ar" id="themeTextAr">نهاري</span>
+        </button>
+        <button id="langToggle" class="btn-toggle" title="Toggle English/Arabic" aria-label="Toggle Language">
+          <span>🌐</span>
+          <span class="lang-en">العربية</span>
+          <span class="lang-ar">English</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-container">
+
+    <!-- Hero Header Banner -->
+    <header class="hero-banner">
+      <span class="hero-badge lang-en">Chapter 6 Study Guide</span>
+      <span class="hero-badge lang-ar">دليل دراسة الفصل السادس</span>
+
+      <h2 class="hero-title lang-en">CPU Scheduling & Dispatching Algorithms</h2>
+      <h2 class="hero-title lang-ar">جدولة المعالج وخوارزميات توزيع المهام</h2>
+
+      <p class="hero-subtitle lang-en">
+        Master CPU-I/O burst cycles, preemptive vs nonpreemptive dispatching, optimization criteria, 
+        classic scheduling algorithms (FCFS, SJF, SRTF, Priority, Round Robin, Multilevel Queues), 
+        Gantt chart calculations with context switch overhead, and queueing models (Little's Law).
+      </p>
+      <p class="hero-subtitle lang-ar">
+        استيعاب شامل لدورات اندفاع المعالج والإدخال/الإخراج، والجدولة الاستباقية وغير الاستباقية، ومعايير التحسين، 
+        وخوارزميات الجدولة الكلاسيكية (FCFS، SJF، SRTF، الأولويات، Round Robin، الطوابير متعددة المستويات)، 
+        وحسابات مخططات جانت مع تكلفة تبديل السياق، ونماذج صفوف الانتظار (قانون ليتل).
+      </p>
+
+      <div class="hero-stats">
+        <div class="stat-card">
+          <span class="stat-value">45</span>
+          <span class="stat-label lang-en">Lecture Slides</span>
+          <span class="stat-label lang-ar">شريحة تعليمية</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">5 Criteria</span>
+          <span class="stat-label lang-en">Optimization Metrics</span>
+          <span class="stat-label lang-ar">معايير تحسين الأداء</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">6 Algorithms</span>
+          <span class="stat-label lang-en">Evaluated & Compared</span>
+          <span class="stat-label lang-ar">خوارزميات مجدولة</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">100% Exam Focus</span>
+          <span class="stat-label lang-en">Gantt & Solved Midterms</span>
+          <span class="stat-label lang-ar">مسائل امتحانات محلولة</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- SECTION 1: Basic Concepts of CPU Scheduling -->
+    <section class="content-section" id="section1">
+      <div class="section-header">
+        <div class="section-number">1</div>
+        <h3 class="section-title lang-en">Basic Concepts of CPU Scheduling</h3>
+        <h3 class="section-title lang-ar">المفاهيم الأساسية لجدولة المعالج</h3>
+      </div>
+
+      <div class="cards-grid">
+        <!-- Card 1: CPU-I/O Burst Cycle -->
+        <article class="info-card">
+          <h4 class="card-title">
+            <span class="card-icon">⚡</span>
+            <span class="lang-en">CPU-I/O Burst Cycle</span>
+            <span class="lang-ar">دورة اندفاع المعالج والإدخال/الإخراج</span>
+          </h4>
+          <div class="card-body">
+            <span class="badge-tag badge-primary lang-en">Process Execution</span>
+            <span class="badge-tag badge-primary lang-ar">تنفيذ العمليات</span>
+            <p class="lang-en">
+              Process execution consists of a <strong>cycle of CPU execution and I/O wait</strong>. Processes alternate back and forth between these two states:
+            </p>
+            <p class="lang-ar">
+              تنفيذ أي عملية يتكون من <strong>دورة متتابعة من تشغيل المعالج وانتظار الإدخال/الإخراج</strong>. تتناوب العمليات بين الحالتين:
+            </p>
+            <ul class="lang-en">
+              <li><strong>CPU Burst:</strong> The process is executing instructions on the processor.</li>
+              <li><strong>I/O Burst:</strong> The process is blocked waiting for an I/O operation (disk, network, user input).</li>
+              <li><strong>Histogram of CPU Bursts:</strong> Empirical distributions reveal an exponential or hyperexponential curve—a <em>large frequency of short bursts</em> (I/O-bound jobs) and a <em>small frequency of very long bursts</em> (CPU-bound jobs).</li>
+            </ul>
+            <ul class="lang-ar">
+              <li><strong>اندفاع المعالج (CPU Burst):</strong> تنفيذ التعليمات الحسابية والمنطقية على المعالج.</li>
+              <li><strong>اندفاع الإدخال/الإخراج (I/O Burst):</strong> توقف العملية لانتظار عمليات القراءة والكتابة والشبكة.</li>
+              <li><strong>منحنى توزيع أزمنة المعالج:</strong> تُظهر الأنظمة منحنى أسياً يتميز بـ <em>تردد عالٍ جداً لفترات اندفاع قصيرة</em> (عمليات I/O-bound) و <em>تردد منخفض لفترات طويلة</em> (عمليات CPU-bound).</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Card 2: CPU Scheduler & Dispatcher -->
+        <article class="info-card">
+          <h4 class="card-title">
+            <span class="card-icon">🎯</span>
+            <span class="lang-en">Scheduler vs. Dispatcher</span>
+            <span class="lang-ar">المجدول مقابل الموزع (Dispatcher)</span>
+          </h4>
+          <div class="card-body">
+            <span class="badge-tag badge-cyan lang-en">Core Roles</span>
+            <span class="badge-tag badge-cyan lang-ar">الأدوار الأساسية</span>
+            <p class="lang-en">
+              A vital distinction heavily tested on exams:
+            </p>
+            <p class="lang-ar">
+              فارق جوهري وأساسي يتكرر دوماً في الامتحانات:
+            </p>
+            <ul class="lang-en">
+              <li><strong>CPU Scheduler (Short-Term Scheduler):</strong> <em>Selects</em> a process from the ready queue and decides <em>who</em> gets the CPU next.</li>
+              <li><strong>Dispatcher:</strong> The module that actually <em>gives physical control</em> of the CPU to the selected process. Its 3 core duties:
+                <ol>
+                  <li>Switching context (saving/restoring registers).</li>
+                  <li>Switching to user mode.</li>
+                  <li>Jumping to the proper location in the user program to restart it.</li>
+                </ol>
+              </li>
+              <li><strong>Dispatch Latency:</strong> The time it takes for the dispatcher to stop one process and start another running. Must be minimized!</li>
+            </ul>
+            <ul class="lang-ar">
+              <li><strong>مجدول المعالج (Short-Term Scheduler):</strong> <em>يختار</em> العملية الأنسب من طابور الجاهزية (Ready Queue) ويحدد <em>من</em> سيحصل على المعالج.</li>
+              <li><strong>الموزع (Dispatcher):</strong> الوحدة البرمجية المسؤولة عن <em>تسليم السيطرة الفعلية</em> على المعالج للعملية المختارة، ويقوم بثلاث مهام:
+                <ol>
+                  <li>تبديل السياق (حفظ واسترجاع المسجلات).</li>
+                  <li>التحويل إلى وضع المستخدم (User Mode).</li>
+                  <li>القفز إلى العنوان المناسب في برنامج المستخدم لاستئنافه.</li>
+                </ol>
+              </li>
+              <li><strong>زمن تأخير التوزيع (Dispatch Latency):</strong> الوقت المستغرق لإيقاف عملية وبدء تشغيل العملية الأخرى. يجب تقليله إلى أدنى حد!</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+
+      <!-- Preemptive vs Nonpreemptive Callout -->
+      <div class="callout-box hard">
+        <div class="callout-header">
+          <span class="callout-tag">Crucial Exam Concept</span>
+          <span class="lang-en">Preemptive vs. Nonpreemptive (Cooperative) Scheduling</span>
+          <span class="lang-ar">الجدولة الاستباقية مقابل غير الاستباقية (التعاونية)</span>
+        </div>
+        <div class="callout-body">
+          <p class="lang-en">
+            CPU scheduling decisions take place under exactly <strong>4 circumstances</strong>:
+          </p>
+          <p class="lang-ar">
+            تُتخذ قرارات جدولة المعالج تحت <strong>أربعة ظروف محددة</strong> تماماً:
+          </p>
+          <div class="steps-container">
+            <div class="step-item">
+              <div class="step-badge">1</div>
+              <div class="step-content">
+                <h4 class="lang-en">Switches from Running &rarr; Waiting state</h4>
+                <h4 class="lang-ar">التحول من حالة التشغيل إلى الانتظار (Running &rarr; Waiting)</h4>
+                <p class="lang-en">E.g., I/O request initiated, or calling <code>wait()</code> for child process completion. <strong style="color: var(--accent-amber);">Nonpreemptive</strong>.</p>
+                <p class="lang-ar">مثل طلب قراءة/كتابة (I/O) أو استدعاء <code>wait()</code> لانتظار عملية فرعية. <strong style="color: var(--accent-amber);">غير استباقية (إجبارية)</strong>.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-badge">2</div>
+              <div class="step-content">
+                <h4 class="lang-en">Switches from Running &rarr; Ready state</h4>
+                <h4 class="lang-ar">التحول من حالة التشغيل إلى الجاهزية (Running &rarr; Ready)</h4>
+                <p class="lang-en">E.g., timer interrupt expires or a higher-priority process arrives. <strong style="color: var(--accent-cyan);">Preemptive</strong>.</p>
+                <p class="lang-ar">مثل انتهاء الشريحة الزمنية (Timer Interrupt) أو وصول عملية ذات أولوية أعلى. <strong style="color: var(--accent-cyan);">استباقية</strong>.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-badge">3</div>
+              <div class="step-content">
+                <h4 class="lang-en">Switches from Waiting &rarr; Ready state</h4>
+                <h4 class="lang-ar">التحول من حالة الانتظار إلى الجاهزية (Waiting &rarr; Ready)</h4>
+                <p class="lang-en">E.g., completion of an I/O operation. The newly ready job may preempt the current CPU occupant. <strong style="color: var(--accent-cyan);">Preemptive</strong>.</p>
+                <p class="lang-ar">مثل اكتمال عملية الإدخال/الإخراج وانتقال العملية إلى Ready. قد تقطع العملية المنفذة حالياً. <strong style="color: var(--accent-cyan);">استباقية</strong>.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-badge">4</div>
+              <div class="step-content">
+                <h4 class="lang-en">Terminates</h4>
+                <h4 class="lang-ar">إنهاء العملية (Terminates)</h4>
+                <p class="lang-en">The process exits normally or abnormally; the CPU is freed. <strong style="color: var(--accent-amber);">Nonpreemptive</strong>.</p>
+                <p class="lang-ar">تنتهي العملية تلقائياً أو بخطأ، فيصبح المعالج حراً بالضرورة. <strong style="color: var(--accent-amber);">غير استباقية (إجبارية)</strong>.</p>
+              </div>
+            </div>
+          </div>
+          <p class="lang-en" style="margin-top: 0.5rem;">
+            <strong>Rule:</strong> Scheduling under circumstances <strong>1 and 4</strong> is strictly <em>nonpreemptive</em> (the running process yields the CPU voluntarily). Under <strong>2 and 3</strong>, scheduling is <em>preemptive</em> (requires handling shared kernel data structures and interrupts carefully).
+          </p>
+          <p class="lang-ar" style="margin-top: 0.5rem;">
+            <strong>القاعدة الامتحانية:</strong> الجدولة تحت الحالتين <strong>1 و 4</strong> تكون <em>غير استباقية حتماً</em> (العملية تتنازل عن المعالج باختيارها أو بموتها). بينما تحت الحالتين <strong>2 و 3</strong> تكون الجدولة <em>استباقية</em> (تتطلب حماية البيانات المشتركة في الـ Kernel لمنع حالات السباق).
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: Scheduling Criteria & Optimization Goals -->
+    <section class="content-section" id="section2">
+      <div class="section-header">
+        <div class="section-number">2</div>
+        <h3 class="section-title lang-en">Scheduling Criteria & Optimization Goals</h3>
+        <h3 class="section-title lang-ar">معايير الجدولة وأهداف التحسين الخمسة</h3>
+      </div>
+
+      <div class="table-responsive">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th class="lang-en">Metric / Criterion</th>
+              <th class="lang-ar">المعيار البرمجي</th>
+              <th class="lang-en">Definition & Description</th>
+              <th class="lang-ar">التعريف والوصف</th>
+              <th class="lang-en">Optimization Goal</th>
+              <th class="lang-ar">هدف التحسين</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>CPU Utilization</strong></td>
+              <td><strong>استغلال المعالج</strong></td>
+              <td class="lang-en">Percentage of time the CPU is busy executing user or system processes (ranges from 40% under light load to 90% in heavily loaded systems).</td>
+              <td class="lang-ar">النسبة المئوية للوقت الذي يقضيه المعالج مشغولاً بتنفيذ العمليات (تتراوح من 40% في الأنظمة الخفيفة إلى 90% في الأنظمة المحملة بشدة).</td>
+              <td><span class="badge-tag badge-emerald lang-en">MAXIMIZE &uarr;</span><span class="badge-tag badge-emerald lang-ar">تعظيم &uarr;</span></td>
+            </tr>
+            <tr>
+              <td><strong>Throughput</strong></td>
+              <td><strong>الإنتاجية</strong></td>
+              <td class="lang-en">The number of processes that complete their execution per unit of time (e.g., 10 processes/second).</td>
+              <td class="lang-ar">عدد العمليات التي تُتم تنفيذها بالكامل خلال وحدة زمنية واحدة (مثال: 10 عمليات/ثانية).</td>
+              <td><span class="badge-tag badge-emerald lang-en">MAXIMIZE &uarr;</span><span class="badge-tag badge-emerald lang-ar">تعظيم &uarr;</span></td>
+            </tr>
+            <tr>
+              <td><strong>Turnaround Time</strong></td>
+              <td><strong>زمن الدوران الكلي</strong></td>
+              <td class="lang-en">The interval from the time of submission of a process to the time of completion: <br><code>Turnaround = Completion Time - Arrival Time</code></td>
+              <td class="lang-ar">الفترة الزمنية من لحظة تقديم العملية حتى اكتمالها وخروجها:<br><code>زمن الدوران = وقت الاكتمال - وقت الوصول</code></td>
+              <td><span class="badge-tag badge-rose lang-en">MINIMIZE &darr;</span><span class="badge-tag badge-rose lang-ar">تقليل &darr;</span></td>
+            </tr>
+            <tr>
+              <td><strong>Waiting Time</strong></td>
+              <td><strong>زمن الانتظار</strong></td>
+              <td class="lang-en">The sum of all periods spent by a process waiting in the <em>ready queue</em> (does not include time spent doing I/O or executing on the CPU).</td>
+              <td class="lang-ar">إجمالي الوقت الذي تقضيه العملية داخل <em>طابور الجاهزية (Ready Queue)</em> منتظرة تخصيص المعالج لها (لا يشمل وقت الإدخال/الإخراج).</td>
+              <td><span class="badge-tag badge-rose lang-en">MINIMIZE &darr;</span><span class="badge-tag badge-rose lang-ar">تقليل &darr;</span></td>
+            </tr>
+            <tr>
+              <td><strong>Response Time</strong></td>
+              <td><strong>زمن الاستجابة الأولي</strong></td>
+              <td class="lang-en">The time from submission until the <em>first response</em> is produced (crucial in interactive, time-sharing systems where output starts streaming before execution completes).</td>
+              <td class="lang-ar">الوقت المستغرق من لحظة تقديم الطلب حتى صدور <em>أول استجابة</em> تظهر للمستخدم (معيار حيوي في الأنظمة التفاعلية ومشاركة الوقت).</td>
+              <td><span class="badge-tag badge-rose lang-en">MINIMIZE &darr;</span><span class="badge-tag badge-rose lang-ar">تقليل &darr;</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 3: Detailed Scheduling Algorithms -->
+    <section class="content-section" id="section3">
+      <div class="section-header">
+        <div class="section-number">3</div>
+        <h3 class="section-title lang-en">Core Scheduling Algorithms Analyzed</h3>
+        <h3 class="section-title lang-ar">تحليل خوارزميات الجدولة الأساسية</h3>
+      </div>
+
+      <div class="cards-grid">
+        <!-- FCFS Card -->
+        <article class="info-card">
+          <h4 class="card-title">
+            <span class="card-icon">1️⃣</span>
+            <span>FCFS (First-Come, First-Served)</span>
+          </h4>
+          <div class="card-body">
+            <span class="badge-tag badge-primary lang-en">Nonpreemptive</span>
+            <span class="badge-tag badge-primary lang-ar">غير استباقية</span>
+            <span class="badge-tag badge-amber lang-en">FIFO Queue</span>
+            <span class="badge-tag badge-amber lang-ar">طابور FIFO</span>
+            <p class="lang-en">
+              The simplest CPU-scheduling algorithm: the process that requests the CPU first is allocated the CPU first using a standard FIFO queue.
+            </p>
+            <p class="lang-ar">
+              أبسط خوارزميات الجدولة: العملية التي تطلب المعالج أولاً تحصل عليه أولاً باستخدام طابور FIFO عادي.
+            </p>
+            <ul class="lang-en">
+              <li><strong>Average Waiting Time:</strong> Highly variable and sensitive to the arrival order of processes.</li>
+              <li><strong>The Convoy Effect:</strong> Occurs when one large CPU-bound process holds the CPU while numerous short I/O-bound processes sit idle in the ready queue waiting for it. Leads to severely degraded CPU and I/O device utilization!</li>
+              <li><strong>Starvation:</strong> <em>Impossible</em> in FCFS because every process in the FIFO queue will eventually execute.</li>
+            </ul>
+            <ul class="lang-ar">
+              <li><strong>متوسط زمن الانتظار:</strong> غير مستقر ويتغير بشدة حسب ترتيب وصول العمليات.</li>
+              <li><strong>تأثير القافلة (Convoy Effect):</strong> يحدث عندما تستحوذ عملية طويلة ومستهلكة للمعالج على الـ CPU، بينما تقف خلفها عمليات قصيرة معطلة بانتظارها، مما يخفض كفاءة استغلال الأجهزة والمعالج.</li>
+              <li><strong>المجاعة (Starvation):</strong> <em>لا تحدث إطلاقاً</em> في FCFS لأن كل عملية ستصل إلى مقدمة الطابور حتماً.</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- SJF / SRTF Card -->
+        <article class="info-card">
+          <h4 class="card-title">
+            <span class="card-icon">2️⃣</span>
+            <span>SJF & SRTF (Shortest Job First)</span>
+          </h4>
+          <div class="card-body">
+            <span class="badge-tag badge-emerald lang-en">Optimal Waiting Time</span>
+            <span class="badge-tag badge-emerald lang-ar">أفضل وقت انتظار</span>
+            <span class="badge-tag badge-cyan lang-en">Preemptive/Nonpreemptive</span>
+            <span class="badge-tag badge-cyan lang-ar">استباقية أو غير استباقية</span>
+            <p class="lang-en">
+              Associates with each process the length of its next CPU burst. The CPU is allocated to the process with the shortest burst.
+            </p>
+            <p class="lang-ar">
+              تربط كل عملية بطول فترة اندفاع المعالج التالية لها، ويتم تخصيص المعالج للعملية ذات الفترة الأقصر.
+            </p>
+            <ul class="lang-en">
+              <li><strong>Optimality:</strong> Provably optimal—gives the <em>minimum average waiting time</em> for any given set of stationary processes.</li>
+              <li><strong>Difficulty:</strong> Knowing the length of the next CPU burst in advance is practically impossible in general OS.</li>
+              <li><strong>Preemptive SJF (SRTF):</strong> <em>Shortest-Remaining-Time-First</em>. If a new process arrives with a remaining CPU burst shorter than the currently running process, the current process is preempted!</li>
+              <li><strong>Major Problem:</strong> <strong>Starvation</strong> (Indefinite blocking) for long processes if short processes continuously enter the ready queue.</li>
+            </ul>
+            <ul class="lang-ar">
+              <li><strong>المثالية الرياضية:</strong> خوارزمية مثالية مثبتة رياضياً—تعطي <em>أقل متوسط زمن انتظار</em> لأي مجموعة من العمليات.</li>
+              <li><strong>الصعوبة العملية:</strong> استحالة معرفة مدة تشغيل المعالج القادمة مسبقاً بدقة في أنظمة التشغيل العامة.</li>
+              <li><strong>الـ SJF الاستباقي (SRTF):</strong> تسمى <em>أقصر وقت متبقٍ أولاً</em>. إذا وصلت عملية جديدة بوقت متبقٍ أقل من العملية الشغالة حالياً، يتم قطعها فوراً!</li>
+              <li><strong>المشكلة الكبرى:</strong> <strong>المجاعة (Starvation)</strong> للعمليات الطويلة إذا استمر وصول العمليات القصيرة.</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+
+      <!-- Exponential Averaging Callout -->
+      <div class="callout-box tip">
+        <div class="callout-header">
+          <span class="callout-tag">Mathematical Formula</span>
+          <span class="lang-en">Predicting Next CPU Burst: Exponential Averaging</span>
+          <span class="lang-ar">التنبؤ بفترة المعالج القادمة: المتوسط الأسي</span>
+        </div>
+        <div class="callout-body">
+          <p class="lang-en">
+            Since the OS cannot know the future, it estimates the length of the next CPU burst ($	au_{n+1}$) based on past behavior using <strong>exponential smoothing</strong>:
+          </p>
+          <p class="lang-ar">
+            نظراً لأن نظام التشغيل لا يعلم الغيب، فإنه يخمن مدة الاندفاع التالية ($	au_{n+1}$) بناءً على التاريخ السابق باستخدام معادلة <strong>التنعيم الأسي</strong>:
+          </p>
+          
+          <div class="code-container">
+&tau;<sub>n+1</sub> = &alpha; &middot; t<sub>n</sub> + (1 - &alpha;) &middot; &tau;<sub>n</sub>
+<br><br>
+Where:
+&bull; t<sub>n</sub> = Actual length of the n-th CPU burst
+&bull; &tau;<sub>n</sub> = Predicted historical value for the n-th CPU burst
+&bull; &alpha; = Weighting factor (0 &le; &alpha; &le; 1), commonly set to &alpha; = 0.5 (1/2)
+          </div>
+
+          <ul class="lang-en">
+            <li><strong>If &alpha; = 0:</strong> &tau;<sub>n+1</sub> = &tau;<sub>n</sub> &rarr; Recent actual history does not count at all; the estimate never adapts.</li>
+            <li><strong>If &alpha; = 1:</strong> &tau;<sub>n+1</sub> = t<sub>n</sub> &rarr; Only the most recent actual burst counts; historical trend is completely discarded.</li>
+            <li>Expanding the formula: each successive historical burst term has progressively less weight due to powers of $(1 - lpha)$.</li>
+          </ul>
+          <ul class="lang-ar">
+            <li><strong>إذا كانت &alpha; = 0:</strong> تصبح &tau;<sub>n+1</sub> = &tau;<sub>n</sub> &larr; التاريخ الحديث الفعلي لا يؤثر إطلاقاً، ويبقى التقدير ثابتاً كما هو.</li>
+            <li><strong>إذا كانت &alpha; = 1:</strong> تصبح &tau;<sub>n+1</sub> = t<sub>n</sub> &larr; فقط آخر فترة فعلية هي التي تؤخذ في الحسبان، ويتم إهمال التاريخ القديم تماماً.</li>
+            <li>عند فك المعادلة، يقل وزن الفترات السابقة تدريجياً وبشكل أسي لقوى المعامل $(1 - lpha)$.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="cards-grid">
+        <!-- Priority Scheduling Card -->
+        <article class="info-card">
+          <h4 class="card-title">
+            <span class="card-icon">3️⃣</span>
+            <span class="lang-en">Priority Scheduling</span>
+            <span class="lang-ar">جدولة الأولويات (Priority Scheduling)</span>
+          </h4>
+          <div class="card-body">
+            <span class="badge-tag badge-amber lang-en">Integer Priorities</span>
+            <span class="badge-tag badge-amber lang-ar">أولويات رقمية</span>
+            <span class="badge-tag badge-rose lang-en">Starvation Risk</span>
+            <span class="badge-tag badge-rose lang-ar">خطر المجاعة</span>
+            <p class="lang-en">
+              Each process is assigned an integer priority. The CPU is allocated to the process with the highest priority (conventionally, <strong>smallest integer = highest priority</strong>).
+            </p>
+            <p class="lang-ar">
+              يتم تعيين رقم أولوية صحيح لكل عملية. ويخصص المعالج للعملية ذات الأولوية الأعلى (عادةً: <strong>الرقم الأصغر يمثل الأولوية القصوى</strong>).
+            </p>
+            <ul class="lang-en">
+              <li>Can be <strong>preemptive</strong> or <strong>nonpreemptive</strong>.</li>
+              <li><strong>SJF is a special case:</strong> where priority = inverse of predicted next CPU burst length ($1 / 	au$).</li>
+              <li><strong>The Fatal Flaw: Starvation:</strong> Low-priority processes may wait forever if high-priority processes keep arriving (in 1973, when MIT's IBM 7094 was shut down, a process submitted in 1967 had never run!).</li>
+              <li><strong>The Elegant Solution: Aging:</strong> Gradually increasing the priority of processes as they wait in the ready queue (e.g., increase priority by 1 every 15 minutes).</li>
+            </ul>
+            <ul class="lang-ar">
+              <li>يمكن أن تكون <strong>استباقية</strong> أو <strong>غير استباقية</strong>.</li>
+              <li><strong>SJF حالة خاصة منها:</strong> حيث تكون الأولوية هي مقلوب وقت الاندفاع المتوقع ($1 / 	au$).</li>
+              <li><strong>المعضلة الكبرى: المجاعة (Starvation):</strong> قد تظل العمليات ذات الأولوية المنخفضة معلقة للأبد (في عام 1973 بمعهد MIT، عند إيقاف حاسوب IBM، وجدوا عملية أُرسلت عام 1967 لم تنفذ أبداً!).</li>
+              <li><strong>الحل الذهبي: التقادم (Aging):</strong> زيادة أولوية العملية تدريجياً كلما طال انتظارها في طابور الجاهزية (مثلاً: زيادة الأولوية درجة كل 15 دقيقة).</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Round Robin Card -->
+        <article class="info-card">
+          <h4 class="card-title">
+            <span class="card-icon">4️⃣</span>
+            <span class="lang-en">Round Robin (RR)</span>
+            <span class="lang-ar">الجدولة الدورية (Round Robin)</span>
+          </h4>
+          <div class="card-body">
+            <span class="badge-tag badge-cyan lang-en">Time-Sharing</span>
+            <span class="badge-tag badge-cyan lang-ar">مشاركة الوقت</span>
+            <span class="badge-tag badge-emerald lang-en">Fair & Starvation-Free</span>
+            <span class="badge-tag badge-emerald lang-ar">عادلة وبلا مجاعة</span>
+            <p class="lang-en">
+              Designed specifically for interactive, time-sharing systems. The ready queue is treated as a <strong>circular FIFO queue</strong>.
+            </p>
+            <p class="lang-ar">
+              صُممت خصيصاً للأنظمة التفاعلية ومشاركة الوقت. يُعامل طابور الجاهزية كـ <strong>طابور FIFO دائري</strong>.
+            </p>
+            <ul class="lang-en">
+              <li><strong>Time Quantum ($q$):</strong> Each process receives a small slice of CPU time (usually 10–100 milliseconds). If burst $> q$, the process is preempted and returned to the tail of the ready queue.</li>
+              <li><strong>Guaranteed Wait Bound:</strong> If $n$ processes are in the ready queue and quantum is $q$, no process waits more than <code>(n - 1) &times; q</code> time units for its next turn.</li>
+              <li><strong>Quantum Size Trade-off:</strong>
+                <ul>
+                  <li>If $q 	o \infty$: RR becomes identical to <strong>FCFS</strong>.</li>
+                  <li>If $q$ is extremely small: Context switch overhead dominates the CPU (processor sharing).</li>
+                </ul>
+              </li>
+              <li><strong>Golden Rule:</strong> <strong>80% of CPU bursts should be shorter than $q$</strong> to maintain high throughput with low switching overhead.</li>
+            </ul>
+            <ul class="lang-ar">
+              <li><strong>الشريحة الزمنية (Time Quantum $q$):</strong> تحصل كل عملية على شريحة صغيرة (عادة 10–100 مللي ثانية). إذا لم تكتمل، تُقطع وتوضع في مؤخرة الطابور.</li>
+              <li><strong>حد الانتظار الأقصى:</strong> بوجود $n$ من العمليات، لن تنتظر أي عملية أكثر من <code>(n - 1) &times; q</code> وحدة زمنية بين كل جولة وأخرى.</li>
+              <li><strong>أثر حجم الشريحة الزمنية $q$:</strong>
+                <ul>
+                  <li>إذا كانت $q$ كبيرة جداً: تتحول الخوارزمية إلى <strong>FCFS</strong> تماماً.</li>
+                  <li>إذا كانت $q$ بالغة الصغر: يضيع معظم وقت المعالج في تبديل السياق (Context Switch Overhead).</li>
+                </ul>
+              </li>
+              <li><strong>القاعدة الذهبية:</strong> <strong>80% من فترات اندفاع المعالج يجب أن تكون أقصر من $q$</strong>.</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+
+      <!-- Multilevel Queues Card -->
+      <article class="info-card" style="margin-top: 1.25rem;">
+        <h4 class="card-title">
+          <span class="card-icon">5️⃣</span>
+          <span class="lang-en">Multilevel Queue & Multilevel Feedback Queue (MLFQ)</span>
+          <span class="lang-ar">الطوابير متعددة المستويات والتغذية الراجعة (MLFQ)</span>
+        </h4>
+        <div class="card-body">
+          <div class="cards-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 0;">
+            <div style="background: var(--bg-surface); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+              <h5 style="color: var(--accent-cyan); margin-bottom: 0.5rem;" class="lang-en">Multilevel Queue (Fixed)</h5>
+              <h5 style="color: var(--accent-cyan); margin-bottom: 0.5rem;" class="lang-ar">الطوابير متعددة المستويات الثابتة</h5>
+              <p class="lang-en" style="font-size: 0.88rem;">
+                Ready queue is partitioned into separate queues based on process type:
+              </p>
+              <p class="lang-ar" style="font-size: 0.88rem;">
+                يُقسم طابور الجاهزية إلى طوابير منفصلة حسب طبيعة العملية:
+              </p>
+              <ul style="font-size: 0.85rem;" class="lang-en">
+                <li><strong>Foreground Queue (Interactive):</strong> Uses Round Robin (RR) for fast response.</li>
+                <li><strong>Background Queue (Batch jobs):</strong> Uses FCFS for throughput.</li>
+                <li><strong>Inter-queue Scheduling:</strong> Fixed priority (risk of starvation) or Time-slice (e.g., 80% CPU to foreground, 20% to background).</li>
+                <li><strong>Processes CANNOT move</strong> between queues!</li>
+              </ul>
+              <ul style="font-size: 0.85rem;" class="lang-ar">
+                <li><strong>طابور المقدمة (Foreground - تفاعلي):</strong> يستخدم Round Robin لاستجابة سريعة.</li>
+                <li><strong>طابور الخلفية (Background - دفعات):</strong> يستخدم FCFS لزيادة الإنتاجية.</li>
+                <li><strong>الجدولة بين الطوابير:</strong> أولوية ثابتة (احتمال مجاعة) أو تقسيم زمني (80% للمقدمة و 20% للخلفية).</li>
+                <li><strong>العملية تظل ثابتة</strong> في طابورها ولا تنتقل أبداً!</li>
+              </ul>
+            </div>
+
+            <div style="background: var(--bg-surface); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+              <h5 style="color: var(--accent-emerald); margin-bottom: 0.5rem;" class="lang-en">Multilevel Feedback Queue (MLFQ)</h5>
+              <h5 style="color: var(--accent-emerald); margin-bottom: 0.5rem;" class="lang-ar">طوابير التغذية الراجعة (MLFQ - مرنة)</h5>
+              <p class="lang-en" style="font-size: 0.88rem;">
+                Processes <strong>CAN move between queues</strong>! Provides adaptive scheduling and automatic Aging:
+              </p>
+              <p class="lang-ar" style="font-size: 0.88rem;">
+                تستطيع العمليات <strong>الانتقال بين الطوابير</strong>! تدعم الجدولة التكيفية وتطبيق الـ Aging تلقائياً:
+              </p>
+              <ul style="font-size: 0.85rem;" class="lang-en">
+                <li><strong>Queue 0:</strong> RR with $q=8$ ms. New jobs enter here. If not finished in 8ms, demoted to Q1.</li>
+                <li><strong>Queue 1:</strong> RR with $q=16$ ms. If still not finished, demoted to Q2.</li>
+                <li><strong>Queue 2:</strong> FCFS for long compute-bound jobs.</li>
+                <li><strong>Aging:</strong> A job waiting too long in lower queues is upgraded to higher queues to prevent starvation.</li>
+              </ul>
+              <ul style="font-size: 0.85rem;" class="lang-ar">
+                <li><strong>الطابور Q0:</strong> خوارزمية RR بشريحة 8 مللي ثانية. تدخل العمليات الجديدة هنا، وإن لم تنتهِ تُنزل إلى Q1.</li>
+                <li><strong>الطابور Q1:</strong> خوارزمية RR بشريحة 16 مللي ثانية. إن لم تنتهِ تُنزل إلى Q2.</li>
+                <li><strong>الطابور Q2:</strong> خوارزمية FCFS للعمليات الطويلة المستهلكة للمعالج.</li>
+                <li><strong>التقادم (Aging):</strong> العمليات التي تنتظر طويلاً في الطوابير السفلى تُرفع إلى طوابير أعلى لمنع المجاعة.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- SECTION 4: Multiprocessor Scheduling & Modern Systems -->
+    <section class="content-section" id="section4">
+      <div class="section-header">
+        <div class="section-number">4</div>
+        <h3 class="section-title lang-en">Multiple-Processor & Modern Architecture Scheduling</h3>
+        <h3 class="section-title lang-ar">جدولة المعالجات المتعددة والأنظمة الحديثة</h3>
+      </div>
+
+      <div class="cards-grid">
+        <!-- Multiprocessor Card -->
+        <article class="info-card">
+          <h4 class="card-title">
+            <span class="card-icon">🖥️</span>
+            <span class="lang-en">AMP vs. SMP & Processor Affinity</span>
+            <span class="lang-ar">المعالجة غير المتماثلة والمتماثلة وألفة المعالج</span>
+          </h4>
+          <div class="card-body">
+            <ul class="lang-en">
+              <li><strong>Asymmetric Multiprocessing (AMP):</strong> Only one master core accesses system data structures; workers execute only user code. Simple, no lock contention, but master is a bottleneck.</li>
+              <li><strong>Symmetric Multiprocessing (SMP):</strong> Each processor is self-scheduling from a common ready queue or private ready queues. Most common today.</li>
+              <li><strong>Processor Affinity:</strong> A process has an affinity for the processor core on which it is running (due to warm cache memory contents):
+                <ul>
+                  <li><strong>Soft Affinity:</strong> The OS attempts to keep a process on the same CPU, but does not guarantee it.</li>
+                  <li><strong>Hard Affinity:</strong> The process explicitly specifies CPU sets it can run on (e.g., via <code>sched_setaffinity()</code>).</li>
+                </ul>
+              </li>
+            </ul>
+            <ul class="lang-ar">
+              <li><strong>المعالجة غير المتماثلة (AMP):</strong> معالج رئيسي واحد (Master) يدير هياكل النظام وجدولة المهام، بينما تنفذ بقية المعالجات كود المستخدم فقط.</li>
+              <li><strong>المعالجة المتماثلة (SMP):</strong> كل معالج يقوم بجدولة مهامه ذاتياً، إما من طابور مشترك أو طابور خاص بكل نواة. وهو النموذج السائد اليوم.</li>
+              <li><strong>ألفة المعالج (Processor Affinity):</strong> ميل العملية للبقاء على نفس المعالج للاستفادة من محتويات الكاش (Warm Cache):
+                <ul>
+                  <li><strong>ألفة مرنة (Soft Affinity):</strong> يحاول نظام التشغيل إبقاء العملية على نفس المعالج دون إلزام صارم.</li>
+                  <li><strong>ألفة صلبة (Hard Affinity):</strong> تحديد معالجات معينة لا يجوز للعملية مغادرتها برمجياً.</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Load Balancing Card -->
+        <article class="info-card">
+          <h4 class="card-title">
+            <span class="card-icon">⚖️</span>
+            <span class="lang-en">Load Balancing & Multithreaded Cores</span>
+            <span class="lang-ar">موازنة الحمل والأنوية متعددة المسارات (Multicore)</span>
+          </h4>
+          <div class="card-body">
+            <ul class="lang-en">
+              <li><strong>Load Balancing on SMP:</strong> Needed when each processor has its own private queue to keep workloads evenly distributed:
+                <ul>
+                  <li><strong>Push Migration:</strong> A periodic supervisor task checks CPU loads; if an imbalance is found, it <em>pushes</em> tasks from overloaded to idle CPUs.</li>
+                  <li><strong>Pull Migration:</strong> An idle processor <em>pulls</em> a waiting task from a busy processor's ready queue.</li>
+                </ul>
+              </li>
+              <li><strong>Multicore & Memory Stall:</strong> Modern processors run much faster than memory. When accessing RAM, a core experiences a <strong>memory stall</strong> (hundreds of cycles spent waiting).</li>
+              <li><strong>Hardware Multithreading:</strong> Cores support multiple hardware threads (e.g., Intel Hyper-Threading). While thread 0 stalls waiting for memory, thread 1 executes instructions on the ALU!</li>
+            </ul>
+            <ul class="lang-ar">
+              <li><strong>موازنة الحمل (Load Balancing):</strong> ضرورية عندما يمتلك كل معالج طابوراً خاصاً به:
+                <ul>
+                  <li><strong>الهجرة بالدفع (Push Migration):</strong> مهمة دورية تفحص الأحمال وتدفع المهام من المعالج المزدحم إلى المعالج الخامل.</li>
+                  <li><strong>الهجرة بالسحب (Pull Migration):</strong> المعالج الخامل يقوم بسحب مهام جاهزة من طابور معالج آخر مزدحم.</li>
+                </ul>
+              </li>
+              <li><strong>توقف الذاكرة (Memory Stall):</strong> المعالجات أسرع بمراحل من الذاكرة، فعند طلب بيانات من RAM يتوقف المعالج لمئات الدورات بانتظار البيانات.</li>
+              <li><strong>المسارات العتادية المتعددة (Hardware Threads):</strong> حل المشكلة عبر دعم خيطين عتاديين لكل نواة؛ فعندما يتعطل الخيط الأول بانتظار الذاكرة، ينفذ الخيط الثاني تعليماته على الفور!</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- SECTION 5: Algorithm Evaluation & Little's Law -->
+    <section class="content-section" id="section5">
+      <div class="section-header">
+        <div class="section-number">5</div>
+        <h3 class="section-title lang-en">Algorithm Evaluation & Little's Law</h3>
+        <h3 class="section-title lang-ar">طرق تقييم الخوارزميات وقانون ليتل (Little's Law)</h3>
+      </div>
+
+      <div class="cards-grid">
+        <article class="info-card">
+          <h4 class="card-title">
+            <span class="card-icon">📊</span>
+            <span class="lang-en">Evaluation Methodologies</span>
+            <span class="lang-ar">منهجيات تقييم خوارزميات الجدولة</span>
+          </h4>
+          <div class="card-body">
+            <ul class="lang-en">
+              <li><strong>Deterministic Modeling:</strong> Takes a predetermined, fixed workload (arrival times, burst times) and calculates performance metrics (Gantt chart). Simple and fast, but only valid for that specific dataset.</li>
+              <li><strong>Queueing Models:</strong> Uses mathematical probability distributions for arrival rates and service rates to model queue behaviors.</li>
+              <li><strong>Simulations:</strong> Generates synthetic workloads or uses recorded system traces (Trace Tapes) to simulate behavior. Accurate but computationally expensive.</li>
+              <li><strong>Implementation:</strong> The only 100% accurate method—coding the scheduler directly into the OS kernel and measuring on live production systems.</li>
+            </ul>
+            <ul class="lang-ar">
+              <li><strong>النمذجة الحتمية (Deterministic Modeling):</strong> أخذ بيانات محددة مسبقاً وحساب مخطط جانت ومتوسطات الانتظار. بسيطة وسريعة ولكن نتائجها تقتصر على تلك الحالة فقط.</li>
+              <li><strong>نماذج صفوف الانتظار (Queueing Models):</strong> استخدام التوزيعات الرياضية الاحتمالية لمعدلات الوصول وخدمة المعالج.</li>
+              <li><strong>المحاكاة (Simulations):</strong> محاكاة حركة النظام ببرامج حاسوبية باستخدام أشرطة التتبع المسجلة من أنظمة حقيقية (Trace Tapes). دقيقة لكنها مكلفة ومعقدة.</li>
+              <li><strong>التطبيق الفعلي (Implementation):</strong> الطريقة الوحيدة الدقيقة بنسبة 100%—برمجة المجدول فعلياً داخل النواة وقياس الأداء تحت أحمال حقيقية.</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="info-card">
+          <h4 class="card-title">
+            <span class="card-icon">📐</span>
+            <span class="lang-en">Little's Formula (Exam Standard)</span>
+            <span class="lang-ar">صيغة وقانون ليتل (سؤال امتحاني شائع)</span>
+          </h4>
+          <div class="card-body">
+            <p class="lang-en">
+              In steady state, the rate of processes leaving a queue must equal the rate arriving. Little's Law holds for <em>any</em> scheduling algorithm and arrival distribution:
+            </p>
+            <p class="lang-ar">
+              في حالة الاستقرار (Steady State)، فإن معدل مغادرة العمليات يجب أن يساوي معدل وصولها. يصح قانون ليتل مع <em>أي</em> خوارزمية جدولة وتوزيع وصول:
+            </p>
+            <div class="code-container">
+n = &lambda; &times; W
+<br><br>
+Where:
+&bull; n = Average queue length (number of processes in queue)
+&bull; &lambda; = Average arrival rate into the queue (processes per second)
+&bull; W = Average waiting time in the queue (seconds)
+            </div>
+            <p class="lang-en" style="font-size: 0.88rem; color: var(--accent-amber);">
+              <strong>Solved Example from Lecture Slide 41:</strong><br>
+              If on average &lambda; = 7 processes arrive per second, and normally n = 14 processes reside in the queue, find average waiting time:<br>
+              <code>W = n / &lambda; = 14 / 7 = 2 seconds per process!</code>
+            </p>
+            <p class="lang-ar" style="font-size: 0.88rem; color: var(--accent-amber);">
+              <strong>مثال محلول من سلايد المحاضرة رقم 41:</strong><br>
+              إذا كان معدل الوصول في المتوسط &lambda; = 7 عمليات في الثانية، ويوجد عادة n = 14 عملية في الطابور، فما هو متوسط زمن الانتظار؟<br>
+              <code>W = n / &lambda; = 14 / 7 = ثانيتان لكل عملية!</code>
+            </p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- SECTION 6: Exam Masterclass & Solved Problems -->
+    <section class="content-section" id="section6">
+      <div class="section-header">
+        <div class="section-number">6</div>
+        <h3 class="section-title lang-en">Exam Masterclass: Solved Past Midterm Problems</h3>
+        <h3 class="section-title lang-ar">حلول مسائل امتحانات الميدتيرم السابقة خطوة بخطوة</h3>
+      </div>
+
+      <!-- Problem 1: Midterm 2014 Question 4 -->
+      <div class="callout-box hard" style="border-left-color: var(--accent-primary);">
+        <div class="callout-header">
+          <span class="callout-tag">Midterm 2014 &bull; Question 4 (High-Yield)</span>
+          <span class="lang-en">Gantt Charts with Context-Switch Overhead</span>
+          <span class="lang-ar">مخططات جانت مع تكلفة تبديل السياق (Context Switch)</span>
+        </div>
+        <div class="callout-body">
+          <p class="lang-en">
+            <strong>Problem Statement:</strong> Assume the following set of processes in the ready queue with their arrival and burst times:
+          </p>
+          <p class="lang-ar">
+            <strong>نص المسألة:</strong> افترض العمليات التالية في طابور الجاهزية مع أوقات وصولها وفترات اندفاع المعالج:
+          </p>
+
+          <div class="table-responsive" style="max-width: 500px; margin: 0.75rem 0;">
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th>Process</th>
+                  <th>Arrival Time</th>
+                  <th>Burst Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>P1</strong></td><td>0</td><td>8</td></tr>
+                <tr><td><strong>P2</strong></td><td>2</td><td>2</td></tr>
+                <tr><td><strong>P3</strong></td><td>3</td><td>5</td></tr>
+                <tr><td><strong>P4</strong></td><td>5</td><td>1</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="lang-en">
+            <em>Requirement:</em> Draw the Gantt chart and calculate the turnaround time of each process and the average turnaround time, assuming a <strong>context-switch overhead of 1 unit of time</strong> (assume NO context switch overhead for the first process).
+          </p>
+          <p class="lang-ar">
+            <em>المطلوب:</em> رسم مخطط جانت وحساب زمن الدوران (Turnaround Time) لكل عملية والمتوسط، بافتراض <strong>تكلفة تبديل سياق = وحدة زمنية واحدة (1 CS)</strong> (مع عدم احتساب أي تكلفة لأول عملية).
+          </p>
+
+          <!-- Part I: Round Robin (q = 2, CS = 1) -->
+          <h4 style="color: var(--accent-cyan); margin: 1.25rem 0 0.5rem;" class="lang-en">Part I: Round-Robin (RR) with Quantum q = 2 and Context Switch = 1</h4>
+          <h4 style="color: var(--accent-cyan); margin: 1.25rem 0 0.5rem;" class="lang-ar">الجزء الأول: Round Robin بشريحة q = 2 وتكلفة تبديل سياق CS = 1</h4>
+
+          <div class="gantt-wrapper">
+            <div class="gantt-title lang-en">Execution Timeline (Gantt Chart):</div>
+            <div class="gantt-title lang-ar">الخط الزمني للتنفيذ (Gantt Chart):</div>
+            <div class="gantt-track">
+              <div class="gantt-slot slot-p1" style="flex: 2;">P1</div>
+              <div class="gantt-slot slot-cs" style="flex: 1;">CS</div>
+              <div class="gantt-slot slot-p2" style="flex: 2;">P2 (Done)</div>
+              <div class="gantt-slot slot-cs" style="flex: 1;">CS</div>
+              <div class="gantt-slot slot-p1" style="flex: 2;">P1</div>
+              <div class="gantt-slot slot-cs" style="flex: 1;">CS</div>
+              <div class="gantt-slot slot-p3" style="flex: 2;">P3</div>
+              <div class="gantt-slot slot-cs" style="flex: 1;">CS</div>
+              <div class="gantt-slot slot-p4" style="flex: 1;">P4 (Done)</div>
+              <div class="gantt-slot slot-cs" style="flex: 1;">CS</div>
+              <div class="gantt-slot slot-p1" style="flex: 2;">P1</div>
+              <div class="gantt-slot slot-cs" style="flex: 1;">CS</div>
+              <div class="gantt-slot slot-p3" style="flex: 2;">P3</div>
+              <div class="gantt-slot slot-cs" style="flex: 1;">CS</div>
+              <div class="gantt-slot slot-p1" style="flex: 2;">P1 (Done)</div>
+              <div class="gantt-slot slot-cs" style="flex: 1;">CS</div>
+              <div class="gantt-slot slot-p3" style="flex: 1;">P3 (Done)</div>
+            </div>
+            <div class="gantt-timeline">
+              <span>0</span><span>2</span><span>3</span><span>5</span><span>6</span><span>8</span><span>9</span><span>11</span><span>12</span><span>13</span><span>14</span><span>16</span><span>17</span><span>19</span><span>20</span><span>22</span><span>23</span><span>24</span>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="max-width: 650px;">
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th>Process</th>
+                  <th>Arrival</th>
+                  <th>Burst</th>
+                  <th>Completion Time</th>
+                  <th>Turnaround Time (Finish - Arrival)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>P1</td><td>0</td><td>8</td><td>22</td><td>22 - 0 = <strong>22</strong></td></tr>
+                <tr><td>P2</td><td>2</td><td>2</td><td>5</td><td>5 - 2 = <strong>3</strong></td></tr>
+                <tr><td>P3</td><td>3</td><td>5</td><td>24</td><td>24 - 3 = <strong>21</strong></td></tr>
+                <tr><td>P4</td><td>5</td><td>1</td><td>13</td><td>13 - 5 = <strong>8</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="font-weight: 700; color: var(--accent-emerald);">
+            <span class="lang-en">&rArr; Average Turnaround Time (RR) = (22 + 3 + 21 + 8) / 4 = 54 / 4 = 13.5 time units.</span>
+            <span class="lang-ar">&rArr; متوسط زمن الدوران (Round Robin) = (22 + 3 + 21 + 8) / 4 = 54 / 4 = 13.5 وحدة زمنية.</span>
+          </p>
+
+          <!-- Part II: Nonpreemptive SJF (CS = 1) -->
+          <h4 style="color: var(--accent-cyan); margin: 1.5rem 0 0.5rem;" class="lang-en">Part II: Nonpreemptive Shortest Job First (SJF) with Context Switch = 1</h4>
+          <h4 style="color: var(--accent-cyan); margin: 1.5rem 0 0.5rem;" class="lang-ar">الجزء الثاني: SJF غير الاستباقي مع تكلفة تبديل سياق CS = 1</h4>
+
+          <div class="gantt-wrapper">
+            <div class="gantt-title lang-en">Execution Timeline (Gantt Chart):</div>
+            <div class="gantt-title lang-ar">الخط الزمني للتنفيذ (Gantt Chart):</div>
+            <div class="gantt-track">
+              <div class="gantt-slot slot-p1" style="flex: 8;">P1 (Burst = 8)</div>
+              <div class="gantt-slot slot-cs" style="flex: 1;">CS</div>
+              <div class="gantt-slot slot-p4" style="flex: 1;">P4 (Burst = 1)</div>
+              <div class="gantt-slot slot-cs" style="flex: 1;">CS</div>
+              <div class="gantt-slot slot-p2" style="flex: 2;">P2 (Burst = 2)</div>
+              <div class="gantt-slot slot-cs" style="flex: 1;">CS</div>
+              <div class="gantt-slot slot-p3" style="flex: 5;">P3 (Burst = 5)</div>
+            </div>
+            <div class="gantt-timeline">
+              <span>0</span><span>8</span><span>9</span><span>10</span><span>11</span><span>13</span><span>14</span><span>19</span>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="max-width: 650px;">
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th>Process</th>
+                  <th>Arrival</th>
+                  <th>Burst</th>
+                  <th>Completion Time</th>
+                  <th>Turnaround Time (Finish - Arrival)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>P1</td><td>0</td><td>8</td><td>8</td><td>8 - 0 = <strong>8</strong></td></tr>
+                <tr><td>P4</td><td>5</td><td>1</td><td>10</td><td>10 - 5 = <strong>5</strong></td></tr>
+                <tr><td>P2</td><td>2</td><td>2</td><td>13</td><td>13 - 2 = <strong>11</strong></td></tr>
+                <tr><td>P3</td><td>3</td><td>5</td><td>19</td><td>19 - 3 = <strong>16</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="font-weight: 700; color: var(--accent-emerald);">
+            <span class="lang-en">&rArr; Average Turnaround Time (Nonpreemptive SJF) = (8 + 5 + 11 + 16) / 4 = 40 / 4 = 10.0 time units.</span>
+            <span class="lang-ar">&rArr; متوسط زمن الدوران (SJF غير الاستباقي) = (8 + 5 + 11 + 16) / 4 = 40 / 4 = 10.0 وحدات زمنية.</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Master Algorithm Comparison Table -->
+      <h4 style="font-size: 1.2rem; font-weight: 700; margin: 2rem 0 1rem; color: var(--text-primary);">
+        <span class="lang-en">Master Scheduling Algorithms Comparison Matrix</span>
+        <span class="lang-ar">مصفوفة المقارنة الشاملة لخوارزميات الجدولة</span>
+      </h4>
+
+      <div class="table-responsive">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th class="lang-en">Algorithm</th>
+              <th class="lang-ar">الخوارزمية</th>
+              <th class="lang-en">Type</th>
+              <th class="lang-ar">النوع</th>
+              <th class="lang-en">Starvation Risk?</th>
+              <th class="lang-ar">احتمال المجاعة؟</th>
+              <th class="lang-en">Primary Advantage</th>
+              <th class="lang-ar">الميزة الأساسية</th>
+              <th class="lang-en">Critical Weakness / Note</th>
+              <th class="lang-ar">العيب الجوهري وملاحظات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>FCFS</strong></td>
+              <td><strong>FCFS</strong></td>
+              <td>Nonpreemptive</td>
+              <td><span style="color: var(--accent-emerald);">No Starvation</span></td>
+              <td class="lang-en">Simple FIFO, minimal overhead</td>
+              <td class="lang-ar">بسيطة جداً وتكلفة إدارية شبه معدومة</td>
+              <td class="lang-en"><strong>Convoy Effect</strong>; poor waiting times</td>
+              <td class="lang-ar"><strong>تأثير القافلة</strong> وسوء أزمنة الانتظار</td>
+            </tr>
+            <tr>
+              <td><strong>SJF (Nonpreemptive)</strong></td>
+              <td><strong>SJF غير استباقي</strong></td>
+              <td>Nonpreemptive</td>
+              <td><span style="color: var(--accent-rose);">Yes (Long jobs starve)</span></td>
+              <td class="lang-en">Optimal average waiting time</td>
+              <td class="lang-ar">أفضل متوسط زمن انتظار ممكن</td>
+              <td class="lang-en">Requires future burst length knowledge</td>
+              <td class="lang-ar">تتطلب معرفة الغيب بأزمنة الاندفاع القادمة</td>
+            </tr>
+            <tr>
+              <td><strong>SRTF (Preemptive SJF)</strong></td>
+              <td><strong>SRTF (SJF استباقي)</strong></td>
+              <td>Preemptive</td>
+              <td><span style="color: var(--accent-rose);">Yes (Long jobs starve)</span></td>
+              <td class="lang-en">Even better turnaround for short arrivals</td>
+              <td class="lang-ar">استجابة أسرع للعمليات القصيرة الوافدة</td>
+              <td class="lang-en">High context-switch frequency</td>
+              <td class="lang-ar">كثرة تبديل السياق وتكلفة الذاكرة</td>
+            </tr>
+            <tr>
+              <td><strong>Priority Scheduling</strong></td>
+              <td><strong>جدولة الأولويات</strong></td>
+              <td>Both</td>
+              <td><span style="color: var(--accent-rose);">Yes (Indefinite blocking)</span></td>
+              <td class="lang-en">Accommodates important mission-critical jobs</td>
+              <td class="lang-ar">تخدم المهام الحرجة والعاجلة أولاً</td>
+              <td class="lang-en">Must implement <strong>Aging</strong> to prevent starvation</td>
+              <td class="lang-ar">تتطلب تقنية <strong>Aging</strong> الإلزامية لمنع المجاعة</td>
+            </tr>
+            <tr>
+              <td><strong>Round Robin (RR)</strong></td>
+              <td><strong>Round Robin</strong></td>
+              <td>Preemptive</td>
+              <td><span style="color: var(--accent-emerald);">No Starvation</span></td>
+              <td class="lang-en">Fair; exceptional response time for users</td>
+              <td class="lang-ar">عادلة جداً واستجابة ممتازة في النظم التفاعلية</td>
+              <td class="lang-en">Sensitive to quantum size $q$ (80% rule)</td>
+              <td class="lang-ar">حساسة لحجم $q$ (قاعدة الـ 80% من الاندفاعات)</td>
+            </tr>
+            <tr>
+              <td><strong>Multilevel Feedback Queue</strong></td>
+              <td><strong>طوابير التغذية الراجعة (MLFQ)</strong></td>
+              <td>Preemptive</td>
+              <td><span style="color: var(--accent-emerald);">No (Aging built-in)</span></td>
+              <td class="lang-en">Adaptive, separates I/O-bound from CPU-bound</td>
+              <td class="lang-ar">تكيفية وتفصل تلقائياً بين مهام المعالج ومهام I/O</td>
+              <td class="lang-en">Most complex algorithm to design and configure</td>
+              <td class="lang-ar">أكثر الخوارزميات تعقيداً في التصميم والضبط</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 7: Interactive Knowledge Check Quiz -->
+    <section class="quiz-section" id="quizSection">
+      <div class="quiz-header">
+        <span class="quiz-badge lang-en">Interactive Knowledge Check</span>
+        <span class="quiz-badge lang-ar">اختبار المعرفة التفاعلي</span>
+        <h3 class="quiz-title lang-en">Chapter 6 Mastery Quiz</h3>
+        <h3 class="quiz-title lang-ar">اختبار إتقان الفصل السادس</h3>
+        <p class="quiz-subtitle lang-en">Test your understanding with 5 exam-grade questions derived from Cairo University midterms.</p>
+        <p class="quiz-subtitle lang-ar">اختبر فهمك عبر 5 أسئلة امتحانية دقيقة مستخلصة من امتحانات الميدتيرم السابقة.</p>
+      </div>
+
+      <form id="quizForm">
+        <!-- Question 1: Convoy Effect -->
+        <div class="question-block" id="qblock1">
+          <div class="question-top">
+            <span class="question-badge">Question 1 of 5</span>
+            <span class="question-exam-tag lang-en">Midterm 2014 &bull; Core Concept</span>
+            <span class="question-exam-tag lang-ar">ميدتيرم 2014 &bull; مفهوم أساسي</span>
+          </div>
+          <div class="question-text lang-en">
+            What is the primary performance issue inherently associated with the First-Come, First-Served (FCFS) CPU scheduling algorithm?
+          </div>
+          <div class="question-text lang-ar">
+            ما هي المعضلة الأدائية الجوهرية المرتبطة أساساً بخوارزمية جدولة المعالج (FCFS)؟
+          </div>
+          <div class="options-group">
+            <label class="option-label" data-q="1" data-opt="a">
+              <input type="radio" name="q1" value="a">
+              <span class="lang-en">A) Indefinite starvation of low-priority processes.</span>
+              <span class="lang-ar">أ) حدوث مجاعة دائمة (Starvation) للعمليات ذات الأولوية المنخفضة.</span>
+            </label>
+            <label class="option-label" data-q="1" data-opt="b">
+              <input type="radio" name="q1" value="b">
+              <span class="lang-en">B) The Convoy Effect, where many short I/O-bound jobs wait behind one long CPU-bound process.</span>
+              <span class="lang-ar">ب) تأثير القافلة (Convoy Effect)، حيث تنتظر العديد من العمليات القصيرة خلف عملية طويلة مستهلكة للمعالج.</span>
+            </label>
+            <label class="option-label" data-q="1" data-opt="c">
+              <input type="radio" name="q1" value="c">
+              <span class="lang-en">C) Excessive context-switching overhead caused by an undersized time quantum.</span>
+              <span class="lang-ar">ج) هدر وقت المعالج في تبديل السياق بسبب صغر الشريحة الزمنية.</span>
+            </label>
+            <label class="option-label" data-q="1" data-opt="d">
+              <input type="radio" name="q1" value="d">
+              <span class="lang-en">D) Inability to execute on symmetric multiprocessing (SMP) systems.</span>
+              <span class="lang-ar">د) استحالة تشغيلها على أنظمة المعالجات المتعددة المتماثلة (SMP).</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp1">
+            <strong class="lang-en">Correct Answer: B</strong>
+            <strong class="lang-ar">الإجابة الصحيحة: ب</strong>
+            <p class="lang-en">
+              In FCFS, starvation is completely impossible because every process in the FIFO queue will eventually reach the front and run. The major drawback is the <strong>Convoy Effect</strong>, where short I/O-bound jobs get bottlenecked behind a single CPU-intensive process, leading to low CPU and device utilization.
+            </p>
+            <p class="lang-ar">
+              في FCFS، يستحيل حدوث مجاعة (Starvation) لأن كل عملية في طابور الـ FIFO ستصل لمقدمة الطابور حتماً. المشكلة الجوهرية هي <strong>تأثير القافلة (Convoy Effect)</strong> حيث تتعطل العمليات التفاعلية القصيرة خلف عملية حسابية طويلة مما يهدر كفاءة الأجهزة.
+            </p>
+          </div>
+        </div>
+
+        <!-- Question 2: Dispatcher vs Scheduler -->
+        <div class="question-block" id="qblock2">
+          <div class="question-top">
+            <span class="question-badge">Question 2 of 5</span>
+            <span class="question-exam-tag lang-en">Midterm 2021 &bull; Definitions</span>
+            <span class="question-exam-tag lang-ar">ميدتيرم 2021 &bull; تعاريف</span>
+          </div>
+          <div class="question-text lang-en">
+            Which operating system component is specifically responsible for context switching, switching to user mode, and jumping to the proper restart location in a user program?
+          </div>
+          <div class="question-text lang-ar">
+            أي مكوّن في نظام التشغيل مسؤول تحديداً عن تبديل السياق، والتحويل لوضع المستخدم، والقفز لموقع الاستئناف المناسب في كود المستخدم؟
+          </div>
+          <div class="options-group">
+            <label class="option-label" data-q="2" data-opt="a">
+              <input type="radio" name="q2" value="a">
+              <span class="lang-en">A) Long-term Scheduler (Job Scheduler)</span>
+              <span class="lang-ar">أ) المجدول طويل المدى (Long-term Scheduler)</span>
+            </label>
+            <label class="option-label" data-q="2" data-opt="b">
+              <input type="radio" name="q2" value="b">
+              <span class="lang-en">B) Dispatcher</span>
+              <span class="lang-ar">ب) الموزع (Dispatcher)</span>
+            </label>
+            <label class="option-label" data-q="2" data-opt="c">
+              <input type="radio" name="q2" value="c">
+              <span class="lang-en">C) Short-term CPU Scheduler</span>
+              <span class="lang-ar">ج) مجدول المعالج قصير المدى (Short-term Scheduler)</span>
+            </label>
+            <label class="option-label" data-q="2" data-opt="d">
+              <input type="radio" name="q2" value="d">
+              <span class="lang-en">D) Medium-term Scheduler (Swapper)</span>
+              <span class="lang-ar">د) المجدول متوسط المدى (Swapper)</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp2">
+            <strong class="lang-en">Correct Answer: B</strong>
+            <strong class="lang-ar">الإجابة الصحيحة: ب</strong>
+            <p class="lang-en">
+              The short-term scheduler only <em>selects</em> which process runs next. The <strong>Dispatcher</strong> is the low-level module that gives physical control of the CPU to the selected process by switching context, switching to user mode, and jumping to the instruction counter. The time this takes is called <em>Dispatch Latency</em>.
+            </p>
+            <p class="lang-ar">
+              المجدول قصير المدى يقوم فقط بـ <em>اختيار</em> العملية القادمة من الطابور. أما <strong>الموزع (Dispatcher)</strong> فهو الوحدة المسؤولة عن <em>تسليم السيطرة الفعلية</em> للمعالج عبر تبديل السياق والانتقال إلى وضع المستخدم والقفز لعنوان البرنامج، وتسمى هذه الفترة <em>Dispatch Latency</em>.
+            </p>
+          </div>
+        </div>
+
+        <!-- Question 3: Exponential Averaging -->
+        <div class="question-block" id="qblock3">
+          <div class="question-top">
+            <span class="question-badge">Question 3 of 5</span>
+            <span class="question-exam-tag lang-en">Lecture Slide 17 &bull; Analysis</span>
+            <span class="question-exam-tag lang-ar">سلايد المحاضرة 17 &bull; تحليل رياضي</span>
+          </div>
+          <div class="question-text lang-en">
+            In exponential averaging for predicting CPU bursts: &tau;<sub>n+1</sub> = &alpha; &middot; t<sub>n</sub> + (1 - &alpha;) &middot; &tau;<sub>n</sub>, what happens if the parameter &alpha; is set to 0?
+          </div>
+          <div class="question-text lang-ar">
+            في معادلة التنعيم الأسي للتنبؤ بفترة المعالج: &tau;<sub>n+1</sub> = &alpha; &middot; t<sub>n</sub> + (1 - &alpha;) &middot; &tau;<sub>n</sub>، ماذا يحدث عندما تكون قيمة &alpha; = 0؟
+          </div>
+          <div class="options-group">
+            <label class="option-label" data-q="3" data-opt="a">
+              <input type="radio" name="q3" value="a">
+              <span class="lang-en">A) Only the actual last CPU burst (t<sub>n</sub>) counts, and history is completely ignored.</span>
+              <span class="lang-ar">أ) يتم احتساب آخر اندفاع فعلي فقط (t<sub>n</sub>)، مع إهمال التاريخ السابق كلياً.</span>
+            </label>
+            <label class="option-label" data-q="3" data-opt="b">
+              <input type="radio" name="q3" value="b">
+              <span class="lang-en">B) Recent history does not count at all; the prediction remains equal to the historical estimate (&tau;<sub>n+1</sub> = &tau;<sub>n</sub>).</span>
+              <span class="lang-ar">ب) التاريخ الفعلي الحديث لا يؤثر إطلاقاً، ويبقى التوقع مساوياً للتقدير التاريخي السابق (&tau;<sub>n+1</sub> = &tau;<sub>n</sub>).</span>
+            </label>
+            <label class="option-label" data-q="3" data-opt="c">
+              <input type="radio" name="q3" value="c">
+              <span class="lang-en">C) The algorithm defaults to preemptive Round-Robin scheduling.</span>
+              <span class="lang-ar">ج) تتحول الخوارزمية تلقائياً إلى خوارزمية Round-Robin استباقية.</span>
+            </label>
+            <label class="option-label" data-q="3" data-opt="d">
+              <input type="radio" name="q3" value="d">
+              <span class="lang-en">D) The predicted burst becomes 0 milliseconds, causing immediate preemption.</span>
+              <span class="lang-ar">د) تصبح القيمة المتوقعة 0 مللي ثانية مما يسبب قطعاً فورياً للعملية.</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp3">
+            <strong class="lang-en">Correct Answer: B</strong>
+            <strong class="lang-ar">الإجابة الصحيحة: ب</strong>
+            <p class="lang-en">
+              Substituting &alpha; = 0 into the formula yields &tau;<sub>n+1</sub> = 0 &middot; t<sub>n</sub> + (1 - 0) &tau;<sub>n</sub> = &tau;<sub>n</sub>. Hence, recent execution history does not count at all. Conversely, when &alpha; = 1, &tau;<sub>n+1</sub> = t<sub>n</sub> (only the most recent actual burst counts).
+            </p>
+            <p class="lang-ar">
+              بالتعويض عن &alpha; = 0 في المعادلة ينتج: &tau;<sub>n+1</sub> = &tau;<sub>n</sub>، وهذا يعني أن ما حدث مؤخراً لا يؤثر على التقدير القادم، بينما إذا كانت &alpha; = 1 فإن &tau;<sub>n+1</sub> = t<sub>n</sub> فقط.
+            </p>
+          </div>
+        </div>
+
+        <!-- Question 4: Round Robin Characteristics -->
+        <div class="question-block" id="qblock4">
+          <div class="question-top">
+            <span class="question-badge">Question 4 of 5</span>
+            <span class="question-exam-tag lang-en">Midterm 2014 &bull; True/False Pattern</span>
+            <span class="question-exam-tag lang-ar">ميدتيرم 2014 &bull; نمط صح/خطأ</span>
+          </div>
+          <div class="question-text lang-en">
+            Which of the following statements regarding Round-Robin (RR) scheduling is TRUE?
+          </div>
+          <div class="question-text lang-ar">
+            أي العبارات التالية المتعلقة بجدولة Round-Robin (RR) صحيحة تماماً؟
+          </div>
+          <div class="options-group">
+            <label class="option-label" data-q="4" data-opt="a">
+              <input type="radio" name="q4" value="a">
+              <span class="lang-en">A) Round-Robin is a nonpreemptive scheduling algorithm.</span>
+              <span class="lang-ar">أ) جدولة Round-Robin هي خوارزمية غير استباقية (Nonpreemptive).</span>
+            </label>
+            <label class="option-label" data-q="4" data-opt="b">
+              <input type="radio" name="q4" value="b">
+              <span class="lang-en">B) As the time quantum q becomes arbitrarily large (q &rarr; &infin;), RR becomes equivalent to First-Come, First-Served (FCFS).</span>
+              <span class="lang-ar">ب) عندما تكبر الشريحة الزمنية q بشكل غير محدود (q &rarr; &infin;)، يتطابق سلوك RR مع خوارزمية FCFS تماماً.</span>
+            </label>
+            <label class="option-label" data-q="4" data-opt="c">
+              <input type="radio" name="q4" value="c">
+              <span class="lang-en">C) To optimize performance, at least 80% of CPU bursts should be significantly longer than the time quantum q.</span>
+              <span class="lang-ar">ج) لتحسين الأداء، يجب أن تكون 80% من فترات المعالج أطول بكثير من الشريحة الزمنية q.</span>
+            </label>
+            <label class="option-label" data-q="4" data-opt="d">
+              <input type="radio" name="q4" value="d">
+              <span class="lang-en">D) Low-priority processes suffer from indefinite starvation in Round-Robin.</span>
+              <span class="lang-ar">د) تعاني العمليات ذات الأولوية المنخفضة من المجاعة الدائمة في خوارزمية Round-Robin.</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp4">
+            <strong class="lang-en">Correct Answer: B</strong>
+            <strong class="lang-ar">الإجابة الصحيحة: ب</strong>
+            <p class="lang-en">
+              If quantum $q$ is extremely large, no process ever exhausts its quantum, meaning each process runs to completion in FIFO arrival order (identical to FCFS). Note: Statement A is false (RR is strictly preemptive), Statement C is inverted (80% of bursts should be <em>shorter</em> than $q$), and Statement D is false (RR is inherently starvation-free).
+            </p>
+            <p class="lang-ar">
+              إذا كانت الشريحة $q$ كبيرة جداً، فلن تنتهي الشريحة قبل انتهاء العملية، وتنفذ العمليات حتى الاكتمال حسب ترتيب وصولها، وهو تعريف FCFS بالضبط. (لاحظ: العبارة أ خاطئة لأن RR استباقية، والعبارة ج مقلوبة لأن 80% يجب أن تكون <em>أقصر</em> من $q$، والعبارة د خاطئة لأن RR مستحيلة المجاعة).
+            </p>
+          </div>
+        </div>
+
+        <!-- Question 5: Starvation, Aging & Little's Law -->
+        <div class="question-block" id="qblock5">
+          <div class="question-top">
+            <span class="question-badge">Question 5 of 5</span>
+            <span class="question-exam-tag lang-en">Slide 22 & 41 &bull; Synthesis</span>
+            <span class="question-exam-tag lang-ar">سلايد 22 و 41 &bull; تطبيق وقوانين</span>
+          </div>
+          <div class="question-text lang-en">
+            How is process starvation resolved in Priority Scheduling, and which equation represents Little's Law for queueing systems in steady state?
+          </div>
+          <div class="question-text lang-ar">
+            كيف تُحل مشكلة المجاعة (Starvation) في جدولة الأولويات، وما هي معادلة قانون ليتل (Little's Law) لصفوف الانتظار في حالة الاستقرار؟
+          </div>
+          <div class="options-group">
+            <label class="option-label" data-q="5" data-opt="a">
+              <input type="radio" name="q5" value="a">
+              <span class="lang-en">A) Starvation is resolved by Aging; Little's Law is n = &lambda; &times; W.</span>
+              <span class="lang-ar">أ) تُحل المجاعة بتقنية التقادم (Aging)؛ وقانون ليتل هو n = &lambda; &times; W.</span>
+            </label>
+            <label class="option-label" data-q="5" data-opt="b">
+              <input type="radio" name="q5" value="b">
+              <span class="lang-en">B) Starvation is resolved by Convoy clustering; Little's Law is W = n &times; &lambda;.</span>
+              <span class="lang-ar">ب) تُحل المجاعة بتجميع القوافل؛ وقانون ليتل هو W = n &times; &lambda;.</span>
+            </label>
+            <label class="option-label" data-q="5" data-opt="c">
+              <input type="radio" name="q5" value="c">
+              <span class="lang-en">C) Starvation is resolved by reducing context switch latency; Little's Law is &lambda; = n &times; W.</span>
+              <span class="lang-ar">ج) تُحل المجاعة بتقليل زمن تبديل السياق؛ وقانون ليتل هو &lambda; = n &times; W.</span>
+            </label>
+            <label class="option-label" data-q="5" data-opt="d">
+              <input type="radio" name="q5" value="d">
+              <span class="lang-en">D) Starvation is resolved by swapping processes to disk; Little's Law is n = &lambda; / W.</span>
+              <span class="lang-ar">د) تُحل المجاعة بنقل العمليات إلى القرص الصلب؛ وقانون ليتل هو n = &lambda; / W.</span>
+            </label>
+          </div>
+          <div class="question-explanation" id="exp5">
+            <strong class="lang-en">Correct Answer: A</strong>
+            <strong class="lang-ar">الإجابة الصحيحة: أ</strong>
+            <p class="lang-en">
+              <strong>Aging</strong> prevents starvation by steadily increasing the priority of processes as they wait. In steady-state queueing theory, <strong>Little's Law</strong> relates the average queue length ($n$), arrival rate ($\lambda$), and average waiting time ($W$) via the universal formula: <code>n = &lambda; &times; W</code>.
+            </p>
+            <p class="lang-ar">
+              <strong>التقادم (Aging)</strong> يمنع المجاعة بزيادة أولوية العملية تدريجياً مع زيادة وقت انتظارها. وقانون <strong>ليتل (Little's Law)</strong> يربط بين طول الطابور ($n$) ومعدل الوصول ($\lambda$) ومتوسط الانتظار ($W$) بالمعادلة الخالدة: <code>n = &lambda; &times; W</code>.
+            </p>
+          </div>
+        </div>
+
+        <!-- Quiz Action Buttons -->
+        <div class="quiz-actions">
+          <button type="button" id="submitQuiz" class="btn-quiz-submit">
+            <span class="lang-en">Submit Quiz & View Answers</span>
+            <span class="lang-ar">تصحيح الاختبار وعرض الإجابات</span>
+          </button>
+          <button type="button" id="resetQuiz" class="btn-quiz-reset">
+            <span class="lang-en">Reset Quiz</span>
+            <span class="lang-ar">إعادة الاختبار</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Score Box -->
+      <div id="scoreBox" class="score-box">
+        <div class="score-circle">
+          <span id="scoreVal" class="score-number">0</span>
+          <span class="score-percent">/ 5</span>
+        </div>
+        <h4 id="scoreTitle" class="score-status">Evaluation</h4>
+        <p id="scoreMsg" class="score-message">Your score breakdown will appear here.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Page Footer -->
+  <footer class="page-footer">
+    <div class="lang-en">
+      Operating Systems Course Study Guide &bull; BCS241 &bull; Cairo University FCSAI &bull; Dr. Khaled Wassif
+    </div>
+    <div class="lang-ar">
+      دليل دراسة أنظمة التشغيل &bull; مقرر BCS241 &bull; كلية الحاسبات والذكاء الاصطناعي - جامعة القاهرة &bull; د. خالد وصيف
+    </div>
+  </footer>
+
+  <!-- Interactive JavaScript Logic -->
+  <script>
+    // Theme Management
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const themeTextEn = document.getElementById('themeTextEn');
+    const themeTextAr = document.getElementById('themeTextAr');
+
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('os_theme', theme);
+      if (theme === 'light') {
+        themeIcon.textContent = '🌙';
+        themeTextEn.textContent = 'Dark';
+        themeTextAr.textContent = 'ليلي';
+      } else {
+        themeIcon.textContent = '☀️';
+        themeTextEn.textContent = 'Light';
+        themeTextAr.textContent = 'نهاري';
+      }
+    }
+
+    const savedTheme = localStorage.getItem('os_theme') || 'dark';
+    setTheme(savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    });
+
+    // Language Management
+    const langToggle = document.getElementById('langToggle');
+
+    function setLanguage(lang) {
+      document.body.setAttribute('data-lang', lang);
+      document.documentElement.setAttribute('lang', lang);
+      document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+      localStorage.setItem('os_lang', lang);
+    }
+
+    const savedLang = localStorage.getItem('os_lang') || 'en';
+    setLanguage(savedLang);
+
+    langToggle.addEventListener('click', () => {
+      const currentLang = document.body.getAttribute('data-lang') || 'en';
+      setLanguage(currentLang === 'en' ? 'ar' : 'en');
+    });
+
+    // Quiz Grading Logic
+    const correctAnswers = {
+      q1: 'b',
+      q2: 'b',
+      q3: 'b',
+      q4: 'b',
+      q5: 'a'
+    };
+
+    const submitBtn = document.getElementById('submitQuiz');
+    const resetBtn = document.getElementById('resetQuiz');
+    const scoreBox = document.getElementById('scoreBox');
+    const scoreVal = document.getElementById('scoreVal');
+    const scoreTitle = document.getElementById('scoreTitle');
+    const scoreMsg = document.getElementById('scoreMsg');
+
+    submitBtn.addEventListener('click', () => {
+      let score = 0;
+      const total = 5;
+
+      for (let i = 1; i <= total; i++) {
+        const qName = 'q' + i;
+        const selected = document.querySelector(`input[name="${qName}"]:checked`);
+        const block = document.getElementById('qblock' + i);
+        const explanation = document.getElementById('exp' + i);
+        const labels = block.querySelectorAll('.option-label');
+
+        // Reset label classes
+        labels.forEach(lbl => {
+          lbl.classList.remove('is-correct', 'is-incorrect');
+        });
+
+        // Mark the correct option
+        const correctOpt = correctAnswers[qName];
+        const correctLabel = block.querySelector(`.option-label[data-opt="${correctOpt}"]`);
+        if (correctLabel) {
+          correctLabel.classList.add('is-correct');
+        }
+
+        if (selected) {
+          if (selected.value === correctOpt) {
+            score++;
+            block.classList.add('correct-highlight');
+            block.classList.remove('incorrect-highlight');
+          } else {
+            const userLabel = selected.closest('.option-label');
+            if (userLabel) userLabel.classList.add('is-incorrect');
+            block.classList.add('incorrect-highlight');
+            block.classList.remove('correct-highlight');
+          }
+        } else {
+          block.classList.add('incorrect-highlight');
+          block.classList.remove('correct-highlight');
+        }
+
+        // Show explanation
+        explanation.classList.add('show', 'explanation-correct');
+      }
+
+      // Display score
+      scoreVal.textContent = score;
+      const isArabic = document.body.getAttribute('data-lang') === 'ar';
+
+      if (score === 5) {
+        scoreTitle.textContent = isArabic ? "ممتاز! العلامة الكاملة 🎯" : "Flawless! Perfect Score 🎯";
+        scoreMsg.textContent = isArabic 
+          ? "أنت متقن تماماً لكافة مفاهيم جدولة المعالج وخوارزمياتها وحسابات مخطط جانت وقوانين ليتل!"
+          : "You have completely mastered all CPU scheduling concepts, Gantt calculations, and Little's Law!";
+      } else if (score >= 3) {
+        scoreTitle.textContent = isArabic ? "أداء جيد جداً! 👍" : "Very Good Job! 👍";
+        scoreMsg.textContent = isArabic 
+          ? "لديك استيعاب متين لأغلب المفاهيم. راجع التفسيرات الموضحة باللون الأخضر للأسئلة غير المحلولة."
+          : "Solid comprehension! Review the green explanations below the questions you missed.";
+      } else {
+        scoreTitle.textContent = isArabic ? "بحاجة لمزيد من المراجعة 📖" : "Needs Further Review 📖";
+        scoreMsg.textContent = isArabic 
+          ? "أعد قراءة مفاهيم الـ Convoy Effect وحسابات الشريحة الزمنية في Round Robin ومسألة الميدتيرم."
+          : "Review the Convoy Effect, Round Robin time quantum trade-offs, and the solved Midterm problem.";
+      }
+
+      scoreBox.classList.add('show');
+      scoreBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    resetBtn.addEventListener('click', () => {
+      document.getElementById('quizForm').reset();
+      scoreBox.classList.remove('show');
+
+      for (let i = 1; i <= 5; i++) {
+        const block = document.getElementById('qblock' + i);
+        const explanation = document.getElementById('exp' + i);
+        block.classList.remove('correct-highlight', 'incorrect-highlight');
+        explanation.classList.remove('show');
+        const labels = block.querySelectorAll('.option-label');
+        labels.forEach(lbl => lbl.classList.remove('is-correct', 'is-incorrect'));
+      }
+      window.scrollTo({ top: document.getElementById('quizSection').offsetTop - 80, behavior: 'smooth' });
+    });
+  </script>
+</body>
+</html>
